@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { followUser, unfollowUser } from '@/api/follow'
 import type { UserSearchItem } from '@/api/search'
@@ -20,7 +20,7 @@ import { useAuthStore } from '@/store/authStore'
  * `isProcessing`으로 진행 중이면 새 토글 차단(API는 멱등이지만 race 방지).
  * 언마운트 후 setState 방지를 위해 `isMountedRef` 유지.
  */
-export default function UserSearchCard({ user }: { user: UserSearchItem }) {
+function UserSearchCard({ user }: { user: UserSearchItem }) {
   const myUserId = useAuthStore(state => state.user?.id)
   const isMe = myUserId === user.userId
 
@@ -119,3 +119,7 @@ export default function UserSearchCard({ user }: { user: UserSearchItem }) {
     </Link>
   )
 }
+
+// 유저 검색 리스트에서 .map으로 다수 렌더되고 부모(BookSearchPage)가 빈번히 setState하므로
+// props(user) 미변경 시 리렌더를 스킵한다. (팔로우 토글 콜백은 카드 내부라 props 안정적)
+export default memo(UserSearchCard)

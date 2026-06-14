@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import StarRating from './StarRating'
@@ -18,7 +19,7 @@ interface BookListItemProps {
   className?: string
 }
 
-export default function BookListItem({ book, className }: BookListItemProps) {
+function BookListItem({ book, className }: BookListItemProps) {
   return (
     <Link
       to={`/book/${book.isbn}`}
@@ -55,3 +56,6 @@ export default function BookListItem({ book, className }: BookListItemProps) {
     </Link>
   )
 }
+
+// 리스트에서 .map으로 다수 렌더되므로 props(book/className) 미변경 시 리렌더를 스킵한다.
+export default memo(BookListItem)
