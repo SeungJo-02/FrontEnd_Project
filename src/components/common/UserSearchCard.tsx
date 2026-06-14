@@ -85,6 +85,7 @@ export default function UserSearchCard({ user }: { user: UserSearchItem }) {
           <img
             src={user.profileImageUrl}
             alt={`${user.nickname} 프로필 이미지`}
+            loading="lazy"
             className="size-full object-cover"
           />
         ) : (

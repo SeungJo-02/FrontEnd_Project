@@ -289,6 +289,7 @@ export default function BookReviewsListPage() {
               <img
                 src={book.coverImageUrl}
                 alt={book.title}
+                loading="lazy"
                 className="h-14 w-10 rounded-md object-cover shadow-sm"
               />
             ) : (
@@ -364,6 +365,7 @@ export default function BookReviewsListPage() {
                           <img
                             src={review.user.profileImageUrl}
                             alt={review.user.nickname}
+                            loading="lazy"
                             className="size-full object-cover"
                           />
                         ) : (

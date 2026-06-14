@@ -483,6 +483,7 @@ function NotificationRow({
             <img
               src={notification.actor.profileImageUrl}
               alt={actorName}
+              loading="lazy"
               className="size-full object-cover"
             />
           ) : (

@@ -92,6 +92,7 @@ export default function OnboardingPage() {
               <img
                 src={current.imageUrl}
                 alt={current.imageAlt}
+                loading="lazy"
                 className="absolute inset-0 size-full object-cover opacity-80 mix-blend-multiply"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />

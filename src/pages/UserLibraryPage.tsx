@@ -325,6 +325,7 @@ export default function UserLibraryPage() {
                             <img
                               src={item.book.coverImageUrl}
                               alt={item.book.title}
+                              loading="lazy"
                               className="size-full object-cover"
                             />
                           ) : (

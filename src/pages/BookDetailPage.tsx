@@ -179,7 +179,12 @@ export default function BookDetailPage() {
         <div className="flex justify-center px-6 py-8">
           <div className="relative aspect-[2/3] w-2/3 overflow-hidden rounded-lg border border-primary/5 shadow-2xl">
             {book.coverImageUrl ? (
-              <img src={book.coverImageUrl} alt={book.title} className="size-full object-cover" />
+              <img
+                loading="lazy"
+                src={book.coverImageUrl}
+                alt={book.title}
+                className="size-full object-cover"
+              />
             ) : (
               <div className="flex size-full items-center justify-center bg-primary/5">
                 <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
@@ -286,6 +291,7 @@ export default function BookDetailPage() {
                             <img
                               src={review.user.profileImageUrl}
                               alt={review.user.nickname}
+                              loading="lazy"
                               className="size-full object-cover"
                             />
                           ) : (

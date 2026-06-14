@@ -231,6 +231,7 @@ export default function LibraryBookDetailPage() {
               <img
                 src={detail.book.coverImageUrl}
                 alt={`${detail.book.title} 표지`}
+                loading="lazy"
                 className="size-full object-cover"
               />
             ) : (

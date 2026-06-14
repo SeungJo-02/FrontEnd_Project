@@ -95,6 +95,7 @@ export default function OcrTextSelector({
             src={imageSrc}
             alt="OCR 대상 이미지"
             onLoad={handleImageLoad}
+            loading="lazy"
             className="max-h-[70vh] max-w-full rounded-lg"
           />
 

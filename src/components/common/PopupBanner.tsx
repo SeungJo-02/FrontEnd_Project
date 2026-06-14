@@ -85,7 +85,7 @@ export default function PopupBanner({
         </button>
 
         <div className="aspect-square w-full">
-          <img src={imageUrl} alt={imageAlt} className="size-full object-cover" />
+          <img loading="lazy" src={imageUrl} alt={imageAlt} className="size-full object-cover" />
         </div>
 
         <div className="flex gap-2 p-4">

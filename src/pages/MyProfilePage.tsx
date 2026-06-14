@@ -306,6 +306,7 @@ export default function MyProfilePage() {
               <img
                 src={profile.profileImageUrl}
                 alt={`${profile.nickname} 프로필 이미지`}
+                loading="lazy"
                 className="h-32 w-32 rounded-full object-cover"
               />
             ) : (
@@ -486,6 +487,7 @@ export default function MyProfilePage() {
                       <img
                         src={review.book.coverImageUrl}
                         alt={`${review.book.title} 표지`}
+                        loading="lazy"
                         className="size-full object-cover"
                       />
                     ) : (

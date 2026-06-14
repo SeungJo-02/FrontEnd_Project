@@ -278,7 +278,12 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
         <>
           {/* Captured Image Preview */}
           <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-            <img src={capturedImage} alt="촬영된 사진" className="size-full object-contain" />
+            <img
+              loading="lazy"
+              src={capturedImage}
+              alt="촬영된 사진"
+              className="size-full object-contain"
+            />
           </div>
 
           {/* Confirm / Retake */}

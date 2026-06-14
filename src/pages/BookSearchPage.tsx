@@ -794,6 +794,7 @@ export default function BookSearchPage() {
                         <img
                           src={book.coverImageUrl}
                           alt={book.title}
+                          loading="lazy"
                           className="size-full object-cover"
                         />
                       ) : (
@@ -1020,6 +1021,7 @@ function AllTabContent({
                     <img
                       src={book.coverImageUrl}
                       alt={book.title}
+                      loading="lazy"
                       className="size-full object-cover"
                     />
                   ) : (

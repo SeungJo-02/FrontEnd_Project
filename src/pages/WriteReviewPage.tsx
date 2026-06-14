@@ -310,6 +310,7 @@ export default function WriteReviewPage() {
                   <img
                     src={book.coverImageUrl}
                     alt={book.title}
+                    loading="lazy"
                     className="size-full object-cover"
                   />
                 ) : (

@@ -574,6 +574,7 @@ function CommentRow({
               <img
                 src={user.profileImageUrl}
                 alt={user.nickname}
+                loading="lazy"
                 className="size-full object-cover"
               />
             ) : (

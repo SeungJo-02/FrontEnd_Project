@@ -223,6 +223,7 @@ export default function ReviewDetailPage() {
                   <img
                     src={coverImageUrl}
                     alt={review.book.title}
+                    loading="lazy"
                     className="size-full object-cover"
                   />
                 ) : (

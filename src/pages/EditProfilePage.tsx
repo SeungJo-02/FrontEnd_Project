@@ -97,6 +97,7 @@ export default function EditProfilePage() {
                 <img
                   src={user.profileImageUrl}
                   alt={`${user.nickname} 프로필 이미지`}
+                  loading="lazy"
                   className="h-full w-full object-cover"
                 />
               ) : (

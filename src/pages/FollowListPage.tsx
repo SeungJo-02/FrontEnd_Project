@@ -350,6 +350,7 @@ export default function FollowListPage() {
                           <img
                             src={item.profileImageUrl}
                             alt={`${item.nickname} 프로필 이미지`}
+                            loading="lazy"
                             className="size-full object-cover"
                           />
                         ) : (
