@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { getBook, type BookDetail } from '@/api/book'
-import { createReview, getReviewDetail, updateReview } from '@/api/review'
+import { createReview, getReviewDetail, updateReview, type ReviewStatus } from '@/api/review'
 import { extractTextFromImage, type OcrTextField } from '@/api/ocr'
 import AppHeader from '@/components/layout/AppHeader'
 import BottomNav from '@/components/layout/BottomNav'
@@ -48,7 +48,9 @@ export default function WriteReviewPage() {
     null
   )
   const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  // 진행 중인 제출의 상태(임시저장/발행)를 추적해 두 버튼의 로딩 표시를 분리한다.
+  // null이면 제출 중 아님.
+  const [submittingStatus, setSubmittingStatus] = useState<ReviewStatus | null>(null)
   // [CodeRabbit fix] 단일 errorMessage가 "도서 로드 실패"와 "감상 제출 실패"를 함께 다뤄
   // 제출 실패 시 하단의 풀페이지 분기(errorMessage || !book)에 걸려 "도서를 찾을 수 없습니다"
   // 화면으로 점프하면서 사용자가 작성한 글이 사라진 것처럼 보였다.
@@ -199,7 +201,14 @@ export default function WriteReviewPage() {
     setOcrResult(null)
   }
 
-  const handleSubmit = async () => {
+  /**
+   * 감상을 제출한다. `reviewStatus`에 따라 임시저장('DRAFT')과 발행('PUBLISHED')을 겸한다.
+   * - 임시저장: 저장 후 임시저장 목록(`/drafts`)으로 이동
+   * - 발행: 작성이면 상세로, 수정이면 해당 감상 상세로 이동
+   *
+   * 임시저장도 백엔드 검증(@NotBlank content)에 걸리지 않도록 내용 입력은 공통으로 요구한다.
+   */
+  const handleSubmit = async (reviewStatus: ReviewStatus) => {
     const isValidBookId = /^\d+$/.test(bookId ?? '')
     const isValidReviewId = /^\d+$/.test(reviewId ?? '')
     const trimmedContent = reviewText.trim()
@@ -215,7 +224,7 @@ export default function WriteReviewPage() {
       return
     }
 
-    setIsSubmitting(true)
+    setSubmittingStatus(reviewStatus)
     setSubmitErrorMessage(null)
     try {
       const basePayload = {
@@ -224,7 +233,7 @@ export default function WriteReviewPage() {
         // [HIGH-1 fix] 사용자가 토글로 명시적으로 표시한 값을 그대로 전송 (이전엔 false 고정)
         isSpoiler,
         reviewVisibility: 'PUBLIC' as const,
-        reviewStatus: 'PUBLISHED' as const,
+        reviewStatus,
       }
 
       if (isEditMode) {
@@ -232,7 +241,7 @@ export default function WriteReviewPage() {
           ...basePayload,
           quote: trimmedQuote,
         })
-        navigate(`/review/${reviewId}`, { replace: true })
+        navigate(reviewStatus === 'DRAFT' ? '/drafts' : `/review/${reviewId}`, { replace: true })
         return
       }
 
@@ -243,17 +252,21 @@ export default function WriteReviewPage() {
         // 서재 상세에서 진입한 경우에만 서재책과 연결 (그 외엔 미전송)
         ...(libraryBookId != null ? { libraryBookId } : {}),
       })
-      navigate(`/review/${result.reviewId}`, { replace: true })
+      navigate(reviewStatus === 'DRAFT' ? '/drafts' : `/review/${result.reviewId}`, {
+        replace: true,
+      })
     } catch (error) {
       setSubmitErrorMessage(
         error instanceof Error
           ? error.message
-          : isEditMode
-            ? '감상을 수정하지 못했습니다.'
-            : '감상을 작성하지 못했습니다.'
+          : reviewStatus === 'DRAFT'
+            ? '임시저장에 실패했습니다.'
+            : isEditMode
+              ? '감상을 수정하지 못했습니다.'
+              : '감상을 작성하지 못했습니다.'
       )
     } finally {
-      setIsSubmitting(false)
+      setSubmittingStatus(null)
     }
   }
 
@@ -456,20 +469,20 @@ export default function WriteReviewPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              disabled
-              title="준비 중인 기능입니다"
-              aria-label="임시저장 (준비 중)"
-              className="h-14 flex-1 cursor-not-allowed whitespace-nowrap rounded-full border-2 border-primary/40 bg-background text-sm font-bold text-primary/40"
+              onClick={() => handleSubmit('DRAFT')}
+              disabled={submittingStatus !== null}
+              aria-label="임시저장"
+              className="h-14 flex-1 whitespace-nowrap rounded-full border-2 border-primary/40 bg-background text-sm font-bold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              임시저장 (준비 중)
+              {submittingStatus === 'DRAFT' ? '저장 중...' : '임시저장'}
             </button>
             <button
               type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
+              onClick={() => handleSubmit('PUBLISHED')}
+              disabled={submittingStatus !== null}
               className="h-14 flex-[1.7] rounded-full bg-primary text-base font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting
+              {submittingStatus === 'PUBLISHED'
                 ? isEditMode
                   ? '수정 중...'
                   : '게시 중...'

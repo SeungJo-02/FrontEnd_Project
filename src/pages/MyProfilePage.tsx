@@ -460,6 +460,23 @@ export default function MyProfilePage() {
           </div>
         </section>
 
+        {/* Drafts Entry */}
+        <section className="px-6 pt-10">
+          <button
+            type="button"
+            onClick={() => navigate('/drafts')}
+            className="flex w-full items-center gap-3 rounded-[20px] bg-card px-5 py-4 shadow-sm transition-colors hover:bg-primary/5"
+          >
+            <span className="material-symbols-outlined text-2xl text-primary">draft</span>
+            <span className="flex-1 text-left text-base font-bold text-foreground">
+              임시저장한 감상
+            </span>
+            <span className="material-symbols-outlined text-xl text-muted-foreground/50">
+              chevron_right
+            </span>
+          </button>
+        </section>
+
         {/* Public Review Timeline */}
         <section className="px-6 pb-10 pt-10">
           <h2 className="mb-5 text-[28px] font-bold tracking-tight text-foreground">

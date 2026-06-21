@@ -7,6 +7,7 @@ const BookSearchPage = lazy(() => import('@/pages/BookSearchPage'))
 const BookDetailPage = lazy(() => import('@/pages/BookDetailPage'))
 const WriteReviewPage = lazy(() => import('@/pages/WriteReviewPage'))
 const ReviewDetailPage = lazy(() => import('@/pages/ReviewDetailPage'))
+const DraftsListPage = lazy(() => import('@/pages/DraftsListPage'))
 const MyProfilePage = lazy(() => import('@/pages/MyProfilePage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
@@ -132,6 +133,14 @@ const appRoutes = [
     element: (
       <ProtectedRoute>
         <WriteReviewPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/drafts',
+    element: (
+      <ProtectedRoute>
+        <DraftsListPage />
       </ProtectedRoute>
     ),
   },
