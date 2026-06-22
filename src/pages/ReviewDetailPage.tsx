@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { cn } from '@/lib/utils'
+import { shareLink } from '@/lib/share'
 import {
   deleteReview,
   getReviewDetail,
@@ -192,6 +193,17 @@ export default function ReviewDetailPage() {
     } finally {
       setIsDeleting(false)
     }
+  }
+
+  const handleShare = async () => {
+    if (!review) return
+    const result = await shareLink({
+      title: `${review.book.title} 감상`,
+      text: `${review.user.nickname}님의 ${review.book.title} 감상`,
+      path: `/review/${review.reviewId}`,
+    })
+    if (result === 'copied') alert('링크가 복사되었습니다.')
+    else if (result === 'failed') alert('공유에 실패했습니다.')
   }
 
   return (
@@ -386,9 +398,9 @@ export default function ReviewDetailPage() {
 
             <button
               type="button"
-              disabled
-              aria-label="공유 (준비 중)"
-              className="text-muted-foreground/40 disabled:cursor-not-allowed"
+              onClick={handleShare}
+              aria-label="공유"
+              className="text-muted-foreground transition-colors hover:text-primary"
             >
               <span className="material-symbols-outlined text-[22px]">share</span>
             </button>

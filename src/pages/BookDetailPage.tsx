@@ -19,6 +19,7 @@ import {
   type ReadingStatus,
 } from '@/api/library'
 import { formatRelativeTime } from '@/lib/utils'
+import { shareLink } from '@/lib/share'
 
 const statusEmoji: Record<ReadingStatus, string> = {
   want_to_read: '📖 읽고 싶은',
@@ -157,6 +158,17 @@ export default function BookDetailPage() {
     setBook(prev => (prev ? { ...prev, myLibraryBookId: result.libraryBookId } : prev))
   }
 
+  const handleShare = async () => {
+    if (!book) return
+    const result = await shareLink({
+      title: book.title,
+      text: `${book.title} - ${book.author}`,
+      path: `/book/${book.bookId}`,
+    })
+    if (result === 'copied') alert('링크가 복사되었습니다.')
+    else if (result === 'failed') alert('공유에 실패했습니다.')
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <AppHeader
@@ -165,9 +177,9 @@ export default function BookDetailPage() {
         rightAction={
           <button
             type="button"
-            disabled
-            aria-label="공유 (준비 중)"
-            className="flex size-10 items-center justify-center rounded-full text-primary/40"
+            onClick={handleShare}
+            aria-label="공유"
+            className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
           >
             <span className="material-symbols-outlined">share</span>
           </button>

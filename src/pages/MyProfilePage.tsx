@@ -6,6 +6,7 @@ import { getMyProfile, type MyProfile } from '@/api/member'
 import { getMyReviews, REVIEW_PAGE_SIZE, type ReviewListItem } from '@/api/review'
 import { getWisdomTower, type WisdomTowerResponse } from '@/api/library'
 import { formatRelativeTime } from '@/lib/utils'
+import { shareLink } from '@/lib/share'
 import { useAuthStore } from '@/store/authStore'
 
 const TOWER_PALETTE = [
@@ -197,6 +198,17 @@ export default function MyProfilePage() {
     }
   }
 
+  const handleShare = async () => {
+    if (!profile) return
+    const result = await shareLink({
+      title: `${profile.nickname}님의 Shelfeed 프로필`,
+      text: `${profile.nickname}님의 Shelfeed 프로필을 확인해보세요.`,
+      path: `/user/${profile.userId}`,
+    })
+    if (result === 'copied') alert('링크가 복사되었습니다.')
+    else if (result === 'failed') alert('공유에 실패했습니다.')
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -288,9 +300,9 @@ export default function MyProfilePage() {
           <div className="flex justify-end">
             <button
               type="button"
-              disabled
-              aria-label="공유 (준비 중)"
-              className="flex size-10 items-center justify-center rounded-full text-primary/40"
+              onClick={handleShare}
+              aria-label="공유"
+              className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
             >
               <span className="material-symbols-outlined">share</span>
             </button>
