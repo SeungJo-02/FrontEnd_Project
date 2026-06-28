@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { followUser, unfollowUser } from '@/api/follow'
 import type { UserSearchItem } from '@/api/search'
 import { useAuthStore } from '@/store/authStore'
+import { Avatar } from './Avatar'
 
 /**
  * 통합 검색 결과의 유저 카드. 클릭 시 `/user/{userId}` 프로필로 이동, 팔로우 토글
@@ -80,20 +81,11 @@ function UserSearchCard({ user }: { user: UserSearchItem }) {
       to={`/user/${user.userId}`}
       className="flex items-center gap-3 border-b border-primary/5 py-4"
     >
-      <div className="size-12 shrink-0 overflow-hidden rounded-full bg-primary/10">
-        {user.profileImageUrl ? (
-          <img
-            src={user.profileImageUrl}
-            alt={`${user.nickname} 프로필 이미지`}
-            loading="lazy"
-            className="size-full object-cover"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center">
-            <span className="material-symbols-outlined text-primary/40">person</span>
-          </div>
-        )}
-      </div>
+      <Avatar
+        src={user.profileImageUrl}
+        alt={`${user.nickname} 프로필 이미지`}
+        className="size-12 shrink-0"
+      />
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-foreground">{user.nickname}</p>

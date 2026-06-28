@@ -14,6 +14,8 @@ import { useAuthStore } from '@/store/authStore'
 import AppHeader from '@/components/layout/AppHeader'
 import BottomNav from '@/components/layout/BottomNav'
 import StarRating from '@/components/common/StarRating'
+import { Avatar } from '@/components/common/Avatar'
+import { EmptyState } from '@/components/common/EmptyState'
 
 const sortOptions: { label: string; value: BookReviewSort }[] = [
   { label: '최신순', value: 'latest' },
@@ -331,14 +333,7 @@ export default function BookReviewsListPage() {
         </section>
 
         {/* Review List */}
-        {reviews.length === 0 && (
-          <div className="flex flex-col items-center gap-3 py-20">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              rate_review
-            </span>
-            <p className="text-sm text-muted-foreground">아직 감상이 없습니다</p>
-          </div>
-        )}
+        {reviews.length === 0 && <EmptyState icon="rate_review" message="아직 감상이 없습니다" />}
 
         <div className="flex flex-col gap-6 px-6">
           {reviews.map(review => {
@@ -360,22 +355,11 @@ export default function BookReviewsListPage() {
                 >
                   <div className="mb-4 flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="size-10 overflow-hidden rounded-full bg-primary/10">
-                        {review.user.profileImageUrl ? (
-                          <img
-                            src={review.user.profileImageUrl}
-                            alt={review.user.nickname}
-                            loading="lazy"
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex size-full items-center justify-center">
-                            <span className="material-symbols-outlined text-primary/40">
-                              person
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      <Avatar
+                        src={review.user.profileImageUrl}
+                        alt={review.user.nickname}
+                        className="size-10"
+                      />
                       <div>
                         <p className="text-sm font-bold">{review.user.nickname}</p>
                         <p className="text-xs text-muted-foreground">

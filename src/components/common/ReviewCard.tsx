@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore'
 import type { ReadingStatus } from '@/api/library'
 import StarRating from './StarRating'
 import ReportDialog from './ReportDialog'
+import { Avatar } from './Avatar'
 
 export interface ReviewCardData {
   id: number
@@ -107,17 +108,12 @@ function ReviewCard({ review, className }: ReviewCardProps) {
           {/* User Header (이동 영역 아님) */}
           <div className="mb-4 flex items-center justify-between">
             <Link to={`/user/${review.author.id}`} className="flex items-center gap-3">
-              <div className="size-10 overflow-hidden rounded-full border border-primary/10 bg-primary/10">
-                {review.author.profileImageUrl && (
-                  <img
-                    src={review.author.profileImageUrl}
-                    alt={review.author.nickname}
-                    className="size-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                )}
-              </div>
+              <Avatar
+                src={review.author.profileImageUrl}
+                alt={review.author.nickname}
+                fallback={false}
+                className="size-10 border border-primary/10"
+              />
               <div>
                 <p className="text-sm font-bold">{review.author.nickname}</p>
                 <p className="text-xs text-muted-foreground">

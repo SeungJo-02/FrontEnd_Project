@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { FORM_INPUT_CLASS } from '@/constants/form'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -118,7 +119,7 @@ export default function WithdrawPage() {
               type="password"
               autoComplete="current-password"
               placeholder="본인 확인을 위해 현재 비밀번호를 입력해주세요"
-              className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+              className={FORM_INPUT_CLASS}
             />
             {errors.password && (
               <p role="alert" className="ml-1 text-xs text-destructive">

@@ -12,23 +12,12 @@ import {
 } from '@/api/library'
 import { getUserProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
-
-type FilterValue = ReadingStatus | 'all'
-
-const filters: { label: string; value: FilterValue }[] = [
-  { label: '전체', value: 'all' },
-  { label: '읽고 싶은', value: 'want_to_read' },
-  { label: '읽는 중', value: 'reading' },
-  { label: '다 읽음', value: 'finished' },
-  { label: '중단', value: 'stopped' },
-]
-
-const statusBadge: Record<ReadingStatus, { text: string; bg: string }> = {
-  finished: { text: '다 읽음', bg: 'bg-primary' },
-  reading: { text: '읽는 중', bg: 'bg-amber-600' },
-  want_to_read: { text: '읽고 싶은', bg: 'bg-primary/40' },
-  stopped: { text: '중단', bg: 'bg-slate-400' },
-}
+import { EmptyState } from '@/components/common/EmptyState'
+import {
+  LIBRARY_FILTERS as filters,
+  LIBRARY_STATUS_BADGE as statusBadge,
+  type LibraryFilterValue as FilterValue,
+} from '@/constants/library'
 
 export default function UserLibraryPage() {
   const { userId } = useParams<{ userId: string }>()
@@ -294,16 +283,14 @@ export default function UserLibraryPage() {
             )}
 
             {!isLoading && !errorMessage && items.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-3 py-20">
-                <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-                  menu_book
-                </span>
-                <p className="text-sm text-muted-foreground">
-                  {activeFilter === 'all'
+              <EmptyState
+                icon="menu_book"
+                message={
+                  activeFilter === 'all'
                     ? '서재에 등록된 도서가 없어요.'
-                    : '해당 상태의 도서가 없습니다'}
-                </p>
-              </div>
+                    : '해당 상태의 도서가 없습니다'
+                }
+              />
             )}
 
             {items.length > 0 && (

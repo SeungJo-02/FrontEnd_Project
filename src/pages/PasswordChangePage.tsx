@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import AppHeader from '@/components/layout/AppHeader'
 import { changePassword } from '@/api/member'
 import { PASSWORD_HINT, PASSWORD_REGEX } from '@/constants/validation'
+import { FORM_INPUT_CLASS } from '@/constants/form'
 
 const PASSWORD_MAX_LENGTH = 64
 
@@ -107,7 +108,7 @@ export default function PasswordChangePage() {
                   autoComplete="current-password"
                   maxLength={PASSWORD_MAX_LENGTH}
                   placeholder="현재 비밀번호를 입력해주세요"
-                  className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+                  className={FORM_INPUT_CLASS}
                 />
                 {errors.currentPassword && (
                   <p role="alert" className="ml-1 text-xs text-destructive">
@@ -128,7 +129,7 @@ export default function PasswordChangePage() {
                   maxLength={PASSWORD_MAX_LENGTH}
                   placeholder="8자 이상 입력해주세요"
                   aria-describedby="password-hint"
-                  className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+                  className={FORM_INPUT_CLASS}
                 />
                 {errors.newPassword && (
                   <p role="alert" className="ml-1 text-xs text-destructive">
@@ -148,7 +149,7 @@ export default function PasswordChangePage() {
                   autoComplete="new-password"
                   maxLength={PASSWORD_MAX_LENGTH}
                   placeholder="비밀번호를 다시 입력해주세요"
-                  className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+                  className={FORM_INPUT_CLASS}
                 />
                 {errors.confirmPassword && (
                   <p role="alert" className="ml-1 text-xs text-destructive">

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import AppHeader from '@/components/layout/AppHeader'
 import { requestPasswordReset } from '@/api/auth'
+import { FORM_INPUT_CLASS } from '@/constants/form'
 
 const schema = z.object({
   email: z.string().email('올바른 이메일 형식을 입력해주세요'),
@@ -80,7 +81,7 @@ export default function PasswordResetRequestPage() {
                   type="email"
                   autoComplete="email"
                   placeholder="email@example.com"
-                  className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+                  className={FORM_INPUT_CLASS}
                 />
                 {errors.email && (
                   <p role="alert" className="ml-1 text-xs text-destructive">

@@ -3,6 +3,8 @@ import axios from 'axios'
 import AppHeader from '@/components/layout/AppHeader'
 import BottomNav from '@/components/layout/BottomNav'
 import { getBlockedUsers, unblockUser, type BlockedUser } from '@/api/block'
+import { Avatar } from '@/components/common/Avatar'
+import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * 차단한 사용자 목록 페이지 (`/settings/blocked`).
@@ -154,12 +156,7 @@ export default function BlockedUsersPage() {
 
       <main className="flex-1 overflow-y-auto pb-24">
         {users.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              person_off
-            </span>
-            <p className="text-sm text-muted-foreground">차단한 사용자가 없습니다</p>
-          </div>
+          <EmptyState icon="person_off" message="차단한 사용자가 없습니다" />
         ) : (
           <section className="px-5 pt-4">
             <div className="overflow-hidden rounded-[28px] bg-card shadow-sm">
@@ -171,22 +168,12 @@ export default function BlockedUsersPage() {
                   }`}
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="size-11 shrink-0 overflow-hidden rounded-full bg-primary/10">
-                      {user.profileImageUrl ? (
-                        <img
-                          src={user.profileImageUrl}
-                          alt={user.nickname}
-                          loading="lazy"
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex size-full items-center justify-center">
-                          <span className="material-symbols-outlined text-[20px] text-primary/40">
-                            person
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    <Avatar
+                      src={user.profileImageUrl}
+                      alt={user.nickname}
+                      className="size-11 shrink-0"
+                      iconClassName="text-[20px]"
+                    />
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-semibold text-foreground">
                         {user.nickname}

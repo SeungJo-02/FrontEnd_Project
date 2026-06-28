@@ -3,29 +3,18 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { cn } from '@/lib/utils'
 import BottomNav from '@/components/layout/BottomNav'
+import { EmptyState } from '@/components/common/EmptyState'
 import {
   getMyLibrary,
   backendToFrontStatus,
   type LibraryBookSummary,
   type ReadingStatus,
 } from '@/api/library'
-
-type FilterValue = ReadingStatus | 'all'
-
-const filters: { label: string; value: FilterValue }[] = [
-  { label: '전체', value: 'all' },
-  { label: '읽고 싶은', value: 'want_to_read' },
-  { label: '읽는 중', value: 'reading' },
-  { label: '다 읽음', value: 'finished' },
-  { label: '중단', value: 'stopped' },
-]
-
-const statusBadge: Record<ReadingStatus, { text: string; bg: string }> = {
-  finished: { text: '다 읽음', bg: 'bg-primary' },
-  reading: { text: '읽는 중', bg: 'bg-amber-600' },
-  want_to_read: { text: '읽고 싶은', bg: 'bg-primary/40' },
-  stopped: { text: '중단', bg: 'bg-slate-400' },
-}
+import {
+  LIBRARY_FILTERS as filters,
+  LIBRARY_STATUS_BADGE as statusBadge,
+  type LibraryFilterValue as FilterValue,
+} from '@/constants/library'
 
 export default function MyLibraryPage() {
   const [activeFilter, setActiveFilter] = useState<FilterValue>('all')
@@ -329,29 +318,24 @@ export default function MyLibraryPage() {
         )}
 
         {!isLoading && !errorMessage && items.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 py-20">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              menu_book
-            </span>
-            <p className="text-sm text-muted-foreground">
-              {activeFilter === 'all'
+          <EmptyState
+            icon="menu_book"
+            message={
+              activeFilter === 'all'
                 ? '서재가 비어있습니다. 책을 검색해서 추가해보세요.'
-                : '해당 상태의 도서가 없습니다'}
-            </p>
-          </div>
+                : '해당 상태의 도서가 없습니다'
+            }
+          />
         )}
 
         {/* 검색 중인데 결과 0건일 때의 빈 상태 — items는 있지만 visibleItems만 비었을 때.
             sentinel은 visibleItems 분기 안에 있어 자동 페이징이 멈추므로,
             아직 로드 안 된 페이지가 남았다면(hasNext) 명시적 "더 불러오기" 버튼 제공. */}
         {!isLoading && !errorMessage && items.length > 0 && visibleItems.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 py-20">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              search_off
-            </span>
-            <p className="text-sm text-muted-foreground">
-              &lsquo;{searchQuery}&rsquo;에 해당하는 도서가 없습니다
-            </p>
+          <EmptyState
+            icon="search_off"
+            message={<>&lsquo;{searchQuery}&rsquo;에 해당하는 도서가 없습니다</>}
+          >
             {hasNext && (
               <>
                 <p className="text-xs text-muted-foreground/70">
@@ -368,7 +352,7 @@ export default function MyLibraryPage() {
                 </button>
               </>
             )}
-          </div>
+          </EmptyState>
         )}
 
         {visibleItems.length > 0 && (

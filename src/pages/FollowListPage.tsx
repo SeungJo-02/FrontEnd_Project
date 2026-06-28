@@ -12,6 +12,8 @@ import {
 } from '@/api/follow'
 import { getUserProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
+import { Avatar } from '@/components/common/Avatar'
+import { EmptyState } from '@/components/common/EmptyState'
 
 type TabValue = 'followers' | 'following'
 
@@ -320,14 +322,10 @@ export default function FollowListPage() {
         )}
 
         {!isLoading && !errorMessage && items.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 py-20">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              group
-            </span>
-            <p className="text-sm text-muted-foreground">
-              {activeTab === 'followers' ? '아직 팔로워가 없어요.' : '아직 팔로잉이 없어요.'}
-            </p>
-          </div>
+          <EmptyState
+            icon="group"
+            message={activeTab === 'followers' ? '아직 팔로워가 없어요.' : '아직 팔로잉이 없어요.'}
+          />
         )}
 
         {items.length > 0 && (
@@ -345,23 +343,12 @@ export default function FollowListPage() {
                       to={`/user/${item.userId}`}
                       className="flex min-w-0 flex-1 items-center gap-3"
                     >
-                      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
-                        {item.profileImageUrl ? (
-                          <img
-                            src={item.profileImageUrl}
-                            alt={`${item.nickname} 프로필 이미지`}
-                            loading="lazy"
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          <span
-                            aria-hidden="true"
-                            className="material-symbols-outlined text-2xl text-muted-foreground/40"
-                          >
-                            person
-                          </span>
-                        )}
-                      </div>
+                      <Avatar
+                        src={item.profileImageUrl}
+                        alt={`${item.nickname} 프로필 이미지`}
+                        className="size-12 shrink-0"
+                        iconClassName="text-2xl text-muted-foreground/40"
+                      />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold">{item.nickname}</p>
                         {item.bio && (

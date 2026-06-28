@@ -13,6 +13,7 @@ import {
   type ReplyItem,
 } from '@/api/comment'
 import ReportDialog from '@/components/common/ReportDialog'
+import { Avatar } from '@/components/common/Avatar'
 
 interface CommentSectionProps {
   reviewId: number
@@ -586,9 +587,7 @@ function CommentRow({
             )}
           </button>
         ) : (
-          <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
-            <span className="material-symbols-outlined text-[16px] text-primary/40">person</span>
-          </div>
+          <Avatar className="size-8 shrink-0" iconClassName="text-[16px]" />
         )}
 
         <div className="min-w-0 flex-1">

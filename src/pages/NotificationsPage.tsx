@@ -10,6 +10,8 @@ import {
   type NotificationType,
 } from '@/api/notification'
 import BottomNav from '@/components/layout/BottomNav'
+import { Avatar } from '@/components/common/Avatar'
+import { EmptyState } from '@/components/common/EmptyState'
 
 type TabValue = 'all' | 'unread'
 
@@ -338,12 +340,7 @@ export default function NotificationsPage() {
         )}
 
         {!isLoading && !errorMessage && notifications.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 py-20">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              notifications_off
-            </span>
-            <p className="text-sm text-muted-foreground">알림이 없습니다</p>
-          </div>
+          <EmptyState icon="notifications_off" message="알림이 없습니다" />
         )}
 
         {notifications.length > 0 && activeTab === 'all' && (
@@ -399,12 +396,7 @@ export default function NotificationsPage() {
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-3 py-20">
-                <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-                  notifications_off
-                </span>
-                <p className="text-sm text-muted-foreground">읽지 않은 알림이 없습니다</p>
-              </div>
+              <EmptyState icon="notifications_off" message="읽지 않은 알림이 없습니다" />
             )}
           </div>
         )}
@@ -478,20 +470,11 @@ function NotificationRow({
       )}
     >
       <div className="relative shrink-0">
-        <div className="size-12 overflow-hidden rounded-full border-2 border-card">
-          {notification.actor?.profileImageUrl ? (
-            <img
-              src={notification.actor.profileImageUrl}
-              alt={actorName}
-              loading="lazy"
-              className="size-full object-cover"
-            />
-          ) : (
-            <div className="flex size-full items-center justify-center bg-primary/10">
-              <span className="material-symbols-outlined text-primary/40">person</span>
-            </div>
-          )}
-        </div>
+        <Avatar
+          src={notification.actor?.profileImageUrl}
+          alt={actorName}
+          className="size-12 border-2 border-card"
+        />
         <div
           className={cn(
             'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-card text-white',

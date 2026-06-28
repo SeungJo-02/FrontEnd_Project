@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import AppHeader from '@/components/layout/AppHeader'
 import BottomNav from '@/components/layout/BottomNav'
+import { EmptyState } from '@/components/common/EmptyState'
 import { deleteReview, getMyReviews, REVIEW_PAGE_SIZE, type ReviewListItem } from '@/api/review'
 import { formatRelativeTime } from '@/lib/utils'
 
@@ -115,15 +116,15 @@ export default function DraftsListPage() {
             불러오는 중...
           </p>
         ) : drafts.length === 0 && !errorMessage ? (
-          <div className="flex flex-col items-center gap-3 rounded-[24px] bg-card py-16 shadow-sm">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              draft
-            </span>
-            <p className="text-sm text-muted-foreground">임시저장한 감상이 없습니다</p>
+          <EmptyState
+            icon="draft"
+            message="임시저장한 감상이 없습니다"
+            className="rounded-[24px] bg-card py-16 shadow-sm"
+          >
             <p className="text-xs text-muted-foreground/60">
               감상 작성 중 임시저장하면 여기에 보관돼요
             </p>
-          </div>
+          </EmptyState>
         ) : (
           <div className="space-y-4">
             {drafts.map(draft => (
