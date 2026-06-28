@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import AppHeader from '@/components/layout/AppHeader'
 import BottomNav from '@/components/layout/BottomNav'
 import { logout, resendEmailCode } from '@/api/auth'
 import { getSettings, updateSettings, type SettingsResponse } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
-import { clearSearchCache } from '@/store/searchStore'
+import { clearRecentKeywords } from '@/features/search/hooks/useRecentKeywords'
 import { clearFeedCache } from '@/store/feedStore'
 import type { EmailVerifyLocationState } from '@/pages/EmailVerificationPage'
 
@@ -104,6 +105,7 @@ function LinkRow({ title, description, onClick, noBorder = false }: LinkRowProps
  */
 export default function SettingsPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const clearAuth = useAuthStore(state => state.clearAuth)
   const user = useAuthStore(state => state.user)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -187,7 +189,9 @@ export default function SettingsPage() {
       // 로그아웃 API 실패는 비치명적 — finally에서 로컬 세션 정리 보장
     } finally {
       clearAuth()
-      clearSearchCache()
+      // 검색 결과 캐시(React Query) + 최근 검색어 정리
+      queryClient.removeQueries({ queryKey: ['search'] })
+      clearRecentKeywords()
       clearFeedCache()
       navigate('/login', { replace: true })
     }

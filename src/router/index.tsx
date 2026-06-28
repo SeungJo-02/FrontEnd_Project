@@ -3,7 +3,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import LoginPage from '@/pages/LoginPage'
 const HomeFeedPage = lazy(() => import('@/pages/HomeFeedPage'))
 const SignupPage = lazy(() => import('@/pages/SignupPage'))
-const BookSearchPage = lazy(() => import('@/pages/BookSearchPage'))
+const BookSearchPage = lazy(() => import('@/features/search/pages/BookSearchPage'))
 const BookDetailPage = lazy(() => import('@/pages/BookDetailPage'))
 const WriteReviewPage = lazy(() => import('@/pages/WriteReviewPage'))
 const ReviewDetailPage = lazy(() => import('@/pages/ReviewDetailPage'))

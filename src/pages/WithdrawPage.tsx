@@ -3,10 +3,11 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import AppHeader from '@/components/layout/AppHeader'
 import { withdrawAccount } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
-import { clearSearchCache } from '@/store/searchStore'
+import { clearRecentKeywords } from '@/features/search/hooks/useRecentKeywords'
 import { clearFeedCache } from '@/store/feedStore'
 import {
   Dialog,
@@ -31,6 +32,7 @@ type FormData = z.infer<typeof schema>
 
 export default function WithdrawPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const clearAuth = useAuthStore(state => state.clearAuth)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
@@ -73,7 +75,9 @@ export default function WithdrawPage() {
       setPendingData(null)
       setIsConfirmOpen(false)
       clearAuth()
-      clearSearchCache()
+      // 검색 결과 캐시(React Query) + 최근 검색어 정리
+      queryClient.removeQueries({ queryKey: ['search'] })
+      clearRecentKeywords()
       clearFeedCache()
       navigate('/login', { replace: true })
     } catch (error) {
