@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import AppHeader from '@/components/layout/AppHeader'
 import { updateProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
+import { FORM_INPUT_CLASS } from '@/constants/form'
 
 const NICKNAME_MAX = 50
 const BIO_MAX = 300
@@ -139,7 +140,7 @@ export default function EditProfilePage() {
               type="text"
               maxLength={NICKNAME_MAX}
               placeholder="이름을 입력하세요"
-              className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+              className={FORM_INPUT_CLASS}
             />
             {errors.nickname && (
               <p role="alert" className="ml-1 text-xs text-destructive">

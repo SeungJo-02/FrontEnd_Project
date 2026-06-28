@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { login, getGoogleLoginUrl } from '@/api/auth'
 import { isCarouselSeen } from '@/lib/onboarding'
+import { FORM_INPUT_CLASS } from '@/constants/form'
 
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일을 입력하세요'),
@@ -168,7 +169,7 @@ export default function LoginPage() {
               {...register('email')}
               type="email"
               placeholder="email@example.com"
-              className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+              className={FORM_INPUT_CLASS}
             />
             {errors.email && (
               <p className="ml-1 text-xs text-destructive">{errors.email.message}</p>
@@ -189,7 +190,7 @@ export default function LoginPage() {
               {...register('password')}
               type="password"
               placeholder="비밀번호를 입력하세요"
-              className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+              className={FORM_INPUT_CLASS}
             />
             {errors.password && (
               <p className="ml-1 text-xs text-destructive">{errors.password.message}</p>

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { getFollowingFeed, getRecommendFeed, type FeedItem, type RecommendItem } from '@/api/feed'
 import { getUnreadNotificationCount } from '@/api/notification'
 import BottomNav from '@/components/layout/BottomNav'
+import { EmptyState } from '@/components/common/EmptyState'
 import PopupBanner from '@/components/common/PopupBanner'
 import ReviewCard, { type ReviewCardData } from '@/components/common/ReviewCard'
 import { useFeedStore, setFeedTabCache, type FeedTab } from '@/store/feedStore'
@@ -486,16 +487,14 @@ export default function HomeFeedPage() {
         )}
 
         {!isLoading && !errorMessage && items.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 py-20">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              {activeTab === 'following' ? 'group' : 'auto_awesome'}
-            </span>
-            <p className="text-sm text-muted-foreground">
-              {activeTab === 'following'
+          <EmptyState
+            icon={activeTab === 'following' ? 'group' : 'auto_awesome'}
+            message={
+              activeTab === 'following'
                 ? '팔로우한 사용자의 감상이 아직 없어요.'
-                : '추천 감상이 아직 없어요.'}
-            </p>
-          </div>
+                : '추천 감상이 아직 없어요.'
+            }
+          />
         )}
 
         {items.map(memo => (

@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppHeader from '@/components/layout/AppHeader'
 import { resetPassword } from '@/api/auth'
 import { PASSWORD_REGEX } from '@/constants/validation'
+import { FORM_INPUT_CLASS } from '@/constants/form'
 
 const schema = z
   .object({
@@ -117,7 +118,7 @@ export default function PasswordResetPage() {
                   type="password"
                   autoComplete="new-password"
                   placeholder="8자 이상 입력해주세요"
-                  className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+                  className={FORM_INPUT_CLASS}
                 />
                 {errors.newPassword && (
                   <p role="alert" className="ml-1 text-xs text-destructive">
@@ -136,7 +137,7 @@ export default function PasswordResetPage() {
                   type="password"
                   autoComplete="new-password"
                   placeholder="비밀번호를 다시 입력해주세요"
-                  className="w-full rounded-xl border-none bg-card px-5 py-4 shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+                  className={FORM_INPUT_CLASS}
                 />
                 {errors.confirmPassword && (
                   <p role="alert" className="ml-1 text-xs text-destructive">

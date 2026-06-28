@@ -5,6 +5,7 @@ import AppHeader from '@/components/layout/AppHeader'
 import { getGenres, completeOnboarding, updateMyGenres, type Genre } from '@/api/genre'
 import { getMyProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
+import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * 장르 선택 페이지 — 온보딩(`/onboarding/genre`)과 설정(`/settings/genres`) 두 모드로 재활용.
@@ -180,12 +181,7 @@ export default function GenreSelectionPage() {
         </div>
 
         {genres.length === 0 && (
-          <div className="flex flex-col items-center gap-3 py-16">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-              category
-            </span>
-            <p className="text-sm text-muted-foreground">등록된 장르가 없습니다</p>
-          </div>
+          <EmptyState icon="category" message="등록된 장르가 없습니다" className="py-16" />
         )}
       </main>
 

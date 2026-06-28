@@ -20,6 +20,7 @@ import {
 } from '@/api/library'
 import { formatRelativeTime } from '@/lib/utils'
 import { shareLink } from '@/lib/share'
+import { Avatar } from '@/components/common/Avatar'
 
 const statusEmoji: Record<ReadingStatus, string> = {
   want_to_read: '📖 읽고 싶은',
@@ -298,22 +299,12 @@ export default function BookDetailPage() {
                   >
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="size-7 overflow-hidden rounded-full bg-primary/10">
-                          {review.user.profileImageUrl ? (
-                            <img
-                              src={review.user.profileImageUrl}
-                              alt={review.user.nickname}
-                              loading="lazy"
-                              className="size-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex size-full items-center justify-center">
-                              <span className="material-symbols-outlined text-[14px] text-primary/40">
-                                person
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <Avatar
+                          src={review.user.profileImageUrl}
+                          alt={review.user.nickname}
+                          className="size-7"
+                          iconClassName="text-[14px]"
+                        />
                         <span className="text-sm font-bold">{review.user.nickname}</span>
                         <span className="text-xs text-muted-foreground">
                           {formatRelativeTime(review.createdAt)}
