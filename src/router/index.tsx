@@ -13,6 +13,8 @@ const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
 const MyLibraryPage = lazy(() => import('@/pages/MyLibraryPage'))
 const BookReviewsListPage = lazy(() => import('@/pages/BookReviewsListPage'))
+const MemoWritePage = lazy(() => import('@/pages/MemoWritePage'))
+const ReadingDayPage = lazy(() => import('@/pages/ReadingDayPage'))
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'))
 const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage'))
 const PasswordResetRequestPage = lazy(() => import('@/pages/PasswordResetRequestPage'))
@@ -24,7 +26,6 @@ const WithdrawPage = lazy(() => import('@/pages/WithdrawPage'))
 const GenreSelectionPage = lazy(() => import('@/pages/GenreSelectionPage'))
 const EditProfilePage = lazy(() => import('@/pages/EditProfilePage'))
 const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'))
-const LibraryBookDetailPage = lazy(() => import('@/pages/LibraryBookDetailPage'))
 const UserLibraryPage = lazy(() => import('@/pages/UserLibraryPage'))
 const FollowListPage = lazy(() => import('@/pages/FollowListPage'))
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
@@ -101,6 +102,22 @@ const appRoutes = [
     element: (
       <ProtectedRoute>
         <BookReviewsListPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/book/:bookId/memo',
+    element: (
+      <ProtectedRoute>
+        <MemoWritePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/book/:bookId/memo/:memoId',
+    element: (
+      <ProtectedRoute>
+        <MemoWritePage />
       </ProtectedRoute>
     ),
   },
@@ -185,10 +202,10 @@ const appRoutes = [
     ),
   },
   {
-    path: '/library/:libraryBookId',
+    path: '/library/day/:date',
     element: (
       <ProtectedRoute>
-        <LibraryBookDetailPage />
+        <ReadingDayPage />
       </ProtectedRoute>
     ),
   },
