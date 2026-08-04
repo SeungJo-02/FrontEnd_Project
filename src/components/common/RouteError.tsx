@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link, isRouteErrorResponse, useRouteError } from 'react-router-dom'
+import Icon from '@/components/common/Icon'
 
 /**
  * 라우트 단위 `errorElement`.
@@ -25,9 +26,7 @@ export default function RouteError() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-      <span className="material-symbols-outlined text-5xl text-muted-foreground">
-        {is404 ? 'search_off' : 'error'}
-      </span>
+      <Icon name={is404 ? 'search_off' : 'error'} className="text-5xl text-muted-foreground" />
       <h1 className="text-lg font-bold text-foreground">
         {is404 ? '페이지를 찾을 수 없습니다' : '문제가 발생했습니다'}
       </h1>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { googleLogin } from '@/api/auth'
 import { isCarouselSeen } from '@/lib/onboarding'
+import Icon from '@/components/common/Icon'
 
 export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams()
@@ -69,7 +70,7 @@ export default function AuthCallbackPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
       {errorMessage ? (
         <div className="flex max-w-md flex-col items-center gap-6 text-center">
-          <span className="material-symbols-outlined text-6xl text-destructive">error</span>
+          <Icon name="error" className="text-6xl text-destructive" />
           <h1 className="text-2xl font-bold tracking-tight">Google 로그인 실패</h1>
           <p
             role="alert"

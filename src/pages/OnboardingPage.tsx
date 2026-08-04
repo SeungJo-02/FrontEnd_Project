@@ -3,10 +3,11 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { isCarouselSeen, markCarouselSeen } from '@/lib/onboarding'
 import { useAuthStore } from '@/store/authStore'
+import Icon, { type IconName } from '@/components/common/Icon'
 
 const slides = [
   {
-    icon: 'edit_note',
+    icon: 'edit_note' as IconName,
     imageUrl:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuA7enhEnhcx8YWljYpT8Vudf4W8uAVcLys7deYrBP0afc_vDj27OxwqlftknWjVM-1eU8n97McbEndElSeuhyyT_WHqS4xzMOCPzs4X6yxQOhShLZIMx_3aF0NWWZnY9RqrTgQ2e3q-0o123viCBgt-hpA_C1-hWjgzVR0_4K3-BiR4ELR7jH4mlpxtluLr3WVLkGSqCGMdBKa6WFUEMo2lLkJsyPMNwN7ms_7JxEvPypcVNJaWgF4etggvPbEeKxpSSZ4Jvatw4jg',
     imageAlt: 'Person reading and taking notes in a cozy room',
@@ -20,7 +21,7 @@ const slides = [
     description: '독서의 여정을 나만의 문장으로 남겨보세요.',
   },
   {
-    icon: 'group',
+    icon: 'group' as IconName,
     imageUrl:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuBdblZxxqMYhebPIhkQ5qCLKZwiIL3Wi0e5xwG3ilfyC9zCpGZYMkmgv9_sr6jyAEpWP9qggFl5RMlFUTjwcGC4HMDx9vrdUpGFC1h2vvSURaFJVRYZWeNWfutVNXp5UtxFILQaZg5JkZyD7Bpbr77K4Ok88bquh4iaEBtxQpycG6sNq7aX4kPj2qlY0ZmN-5KsQSQ9qF-ujtUjdh5AKdmE26sJ3vKPKgqxNsNm81IxgPvUU7Y1j_psfmrfXYTkdBzpnjMumEN6ahM',
     imageAlt: 'Friends discussing books in a cozy cafe',
@@ -34,7 +35,7 @@ const slides = [
     description: '진솔한 독서 이야기를 나눠보세요.',
   },
   {
-    icon: 'bar_chart',
+    icon: 'bar_chart' as IconName,
     imageUrl:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuDWo4_8_d-585jy3PSac9A7r3pbnaM2o5Yn_UNr6LpIzV8CWpP2COEkUF3vYNAfoEMqiVWlng3lKygqOfc7TQvbUYkSQF0apm17PupSVEOoHw5O_jt2xSEv3CpgkuIxmV6-boIpPrGqjQd-8YuuUAtUGty9_n9E87ZajGlpXGT2SXyvTGChclDXenY8nRnXoydqfB1Mwi1vf6lXuFLUtFWlpjFPJbS-PoHSYfunscdC7zg3lRqzvC08oIfFklbDzSlZdTJDW_ai9WF2',
     imageAlt: 'A warm-toned photograph of a tall stack of books on a rustic wooden desk',
@@ -97,9 +98,7 @@ export default function OnboardingPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
               <div className="relative z-10 flex flex-col items-center">
-                <span className="material-symbols-outlined fill-icon mb-4 text-7xl text-primary">
-                  {current.icon}
-                </span>
+                <Icon name={current.icon} filled className="mb-4 text-7xl text-primary" />
               </div>
             </div>
           </div>

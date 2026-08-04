@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import Icon from '@/components/common/Icon'
 
 interface AppHeaderProps {
   title?: string
@@ -32,9 +33,7 @@ export default function AppHeader({
             aria-label="이전 페이지로 돌아가기"
             className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
           >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              arrow_back
-            </span>
+            <Icon name="arrow_back" />
           </button>
         )}
       </div>

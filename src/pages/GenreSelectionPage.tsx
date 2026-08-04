@@ -6,6 +6,7 @@ import { getGenres, completeOnboarding, updateMyGenres, type Genre } from '@/api
 import { getMyProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
 import { EmptyState } from '@/components/common/EmptyState'
+import Icon from '@/components/common/Icon'
 
 /**
  * 장르 선택 페이지 — 온보딩(`/onboarding/genre`)과 설정(`/settings/genres`) 두 모드로 재활용.
@@ -125,7 +126,7 @@ export default function GenreSelectionPage() {
       <div className="flex min-h-screen flex-col bg-background">
         {isSettingsMode && <AppHeader title="관심 장르 변경" showBack />}
         <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
-          <span className="material-symbols-outlined text-5xl text-muted-foreground/30">error</span>
+          <Icon name="error" className="text-5xl text-muted-foreground/30" />
           <p role="alert" className="text-sm text-muted-foreground">
             {errorMessage}
           </p>

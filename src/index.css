@@ -74,20 +74,15 @@
   }
 }
 
-.material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+/* 숫자 입력의 브라우저 기본 증감 화살표 제거 — 앱이 직접 그린 −/+ 버튼을 쓴다. */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
-
-.fill-icon {
-  font-variation-settings:
-    'FILL' 1,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -96,4 +91,64 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* 바텀시트 진입/퇴장 모션. tailwindcss-animate를 쓰지 않는 프로젝트라 키프레임을 직접 둔다.
+   easing은 iOS 시트 감각에 가까운 감속 커브. */
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-slide-down {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes sheet-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-sheet-in {
+  animation: sheet-slide-up 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.animate-sheet-out {
+  animation: sheet-slide-down 220ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+.animate-overlay-in {
+  animation: sheet-fade-in 200ms ease-out;
+}
+.animate-overlay-out {
+  animation: sheet-fade-out 200ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-in,
+  .animate-sheet-out,
+  .animate-overlay-in,
+  .animate-overlay-out {
+    animation: none;
+  }
 }

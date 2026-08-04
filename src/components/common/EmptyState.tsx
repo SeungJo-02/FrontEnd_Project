@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import Icon, { type IconName } from '@/components/common/Icon'
 
 interface EmptyStateProps {
-  /** material-symbols 아이콘 이름 (예: "menu_book") */
-  icon: string
+  /** 아이콘 이름 (예: "menu_book") */
+  icon: IconName
   /** 안내 문구 (조건부 텍스트 가능) */
   message: ReactNode
   /** 래퍼 클래스 override — py-16, bg-card 등 사이트별 스타일 */
@@ -21,12 +22,7 @@ interface EmptyStateProps {
 export function EmptyState({ icon, message, className, iconClassName, children }: EmptyStateProps) {
   return (
     <div className={cn('flex flex-col items-center justify-center gap-3 py-20', className)}>
-      <span
-        aria-hidden="true"
-        className={cn('material-symbols-outlined text-5xl text-muted-foreground/30', iconClassName)}
-      >
-        {icon}
-      </span>
+      <Icon name={icon} className={cn('text-5xl text-muted-foreground/30', iconClassName)} />
       <p className="text-sm text-muted-foreground">{message}</p>
       {children}
     </div>

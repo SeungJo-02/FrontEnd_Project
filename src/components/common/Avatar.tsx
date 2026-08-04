@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import Icon from '@/components/common/Icon'
 
 interface AvatarProps {
   /** 프로필 이미지 URL (없으면 person 아이콘 폴백) */
@@ -30,12 +31,7 @@ export function Avatar({ src, alt = '', className, fallback = true, iconClassNam
         />
       ) : fallback ? (
         <div className="flex size-full items-center justify-center">
-          <span
-            aria-hidden="true"
-            className={cn('material-symbols-outlined text-primary/40', iconClassName)}
-          >
-            person
-          </span>
+          <Icon name="person" className={cn('text-primary/40', iconClassName)} />
         </div>
       ) : null}
     </div>

@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import Icon from '@/components/common/Icon'
 
 const REASON_MAX_LENGTH = 500
 
@@ -98,7 +99,7 @@ export default function WithdrawPage() {
         {/* Warning Notice */}
         <section className="flex flex-col gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[24px] text-destructive">warning</span>
+            <Icon name="warning" className="text-[24px] text-destructive" />
             <h2 className="text-base font-bold text-destructive">계정 삭제 시 주의사항</h2>
           </div>
           <ul className="ml-6 list-disc space-y-1 text-sm text-foreground/80">
