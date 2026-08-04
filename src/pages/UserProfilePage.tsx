@@ -8,6 +8,7 @@ import { blockUser } from '@/api/block'
 import { getUserReviews, REVIEW_PAGE_SIZE, type ReviewListItem } from '@/api/review'
 import { formatRelativeTime } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
+import Icon from '@/components/common/Icon'
 
 /**
  * 타 유저 프로필 페이지.
@@ -155,7 +156,7 @@ export default function UserProfilePage() {
       <div className="flex min-h-screen flex-col bg-background">
         <AppHeader title="프로필" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4">
-          <span className="material-symbols-outlined text-6xl text-muted-foreground/30">error</span>
+          <Icon name="error" className="text-6xl text-muted-foreground/30" />
           <p role="alert" className="text-lg font-bold text-muted-foreground">
             {errorMessage ?? '프로필을 불러올 수 없습니다.'}
           </p>
@@ -316,9 +317,7 @@ export default function UserProfilePage() {
                 className="h-32 w-32 rounded-full object-cover"
               />
             ) : (
-              <span className="material-symbols-outlined text-6xl text-muted-foreground/40">
-                person
-              </span>
+              <Icon name="person" className="text-6xl text-muted-foreground/40" />
             )}
           </div>
 
@@ -399,14 +398,10 @@ export default function UserProfilePage() {
             className="flex w-full items-center justify-between rounded-xl bg-card p-5 shadow-sm transition-colors hover:bg-card/80"
           >
             <div className="flex items-center gap-3">
-              <span aria-hidden="true" className="material-symbols-outlined text-primary">
-                menu_book
-              </span>
+              <Icon name="menu_book" className="text-primary" />
               <span className="text-base font-semibold">서재 보기</span>
             </div>
-            <span aria-hidden="true" className="material-symbols-outlined text-primary/40">
-              chevron_right
-            </span>
+            <Icon name="chevron_right" className="text-primary/40" />
           </button>
         </section>
 
@@ -456,9 +451,7 @@ export default function UserProfilePage() {
                         className="size-full object-cover"
                       />
                     ) : (
-                      <span className="material-symbols-outlined text-3xl text-muted-foreground/30">
-                        menu_book
-                      </span>
+                      <Icon name="menu_book" className="text-3xl text-muted-foreground/30" />
                     )}
                   </div>
 
@@ -479,11 +472,11 @@ export default function UserProfilePage() {
                     </p>
                     <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">favorite</span>
+                        <Icon name="favorite" className="text-[16px]" />
                         {review.likeCount}
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">chat_bubble</span>
+                        <Icon name="chat_bubble" className="text-[16px]" />
                         {review.commentCount}
                       </span>
                     </div>

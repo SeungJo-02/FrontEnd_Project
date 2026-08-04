@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import Icon from '@/components/common/Icon'
 
 interface StarRatingProps {
   rating: number
@@ -23,25 +24,20 @@ export default function StarRating({ rating, size = 'md', className }: StarRatin
   return (
     <div className={cn('flex gap-0.5', className)}>
       {Array.from({ length: fullStars }).map((_, i) => (
-        <span
+        <Icon
           key={`full-${i}`}
-          className={cn('material-symbols-outlined fill-icon text-accent-gold', sizeMap[size])}
-        >
-          star
-        </span>
+          name="star"
+          filled
+          className={cn('text-accent-gold', sizeMap[size])}
+        />
       ))}
-      {hasHalf && (
-        <span className={cn('material-symbols-outlined text-accent-gold', sizeMap[size])}>
-          star_half
-        </span>
-      )}
+      {hasHalf && <Icon name="star_half" className={cn('text-accent-gold', sizeMap[size])} />}
       {Array.from({ length: emptyStars }).map((_, i) => (
-        <span
+        <Icon
           key={`empty-${i}`}
-          className={cn('material-symbols-outlined text-muted-foreground/30', sizeMap[size])}
-        >
-          star
-        </span>
+          name="star"
+          className={cn('text-muted-foreground/30', sizeMap[size])}
+        />
       ))}
     </div>
   )

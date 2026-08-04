@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import Icon from '@/components/common/Icon'
 
 interface PopupBannerProps {
   imageUrl: string
@@ -81,7 +82,7 @@ export default function PopupBanner({
           aria-label="닫기"
           className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-black/30 text-white transition-colors hover:bg-black/50"
         >
-          <span className="material-symbols-outlined text-xl">close</span>
+          <Icon name="close" className="text-xl" />
         </button>
 
         <div className="aspect-square w-full">

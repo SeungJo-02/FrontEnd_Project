@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,6 +7,8 @@ import AppHeader from '@/components/layout/AppHeader'
 import { updateProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
 import { FORM_INPUT_CLASS } from '@/constants/form'
+import { fileToSquareDataUrl, ImageProcessingError } from '@/lib/image'
+import Icon from '@/components/common/Icon'
 
 const NICKNAME_MAX = 50
 const BIO_MAX = 300
@@ -29,6 +31,10 @@ export default function EditProfilePage() {
   const accessToken = useAuthStore(state => state.accessToken)
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  /** 새로 고른 사진의 data URL. null이면 기존 사진을 유지한다. */
+  const [pendingImage, setPendingImage] = useState<string | null>(null)
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
@@ -46,6 +52,29 @@ export default function EditProfilePage() {
   const nickname = useWatch({ control, name: 'nickname' })
   const bio = useWatch({ control, name: 'bio' })
 
+  const previewImageUrl = pendingImage ?? user?.profileImageUrl ?? null
+
+  const handlePickImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    // 같은 파일을 다시 골라도 change가 발생하도록 값을 비운다.
+    event.target.value = ''
+    if (!file) return
+
+    setErrorMessage(null)
+    setIsProcessingImage(true)
+    try {
+      setPendingImage(await fileToSquareDataUrl(file))
+    } catch (error) {
+      setErrorMessage(
+        error instanceof ImageProcessingError
+          ? error.message
+          : '이미지를 처리하지 못했습니다. 다른 사진을 선택해주세요.'
+      )
+    } finally {
+      setIsProcessingImage(false)
+    }
+  }
+
   const onSubmit = async (data: FormData) => {
     if (!user || !accessToken) {
       navigate('/login', { replace: true })
@@ -56,6 +85,9 @@ export default function EditProfilePage() {
       const result = await updateProfile({
         nickname: data.nickname,
         bio: data.bio?.trim(),
+        // 사진을 새로 고른 경우에만 전송한다. 전용 업로드 엔드포인트가 없어
+        // 리사이즈한 data URL을 그대로 profileImageUrl로 보낸다.
+        ...(pendingImage ? { profileImageUrl: pendingImage } : {}),
       })
       setAuth(
         {
@@ -94,29 +126,52 @@ export default function EditProfilePage() {
         <section className="mb-10 flex flex-col items-center">
           <div className="relative">
             <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-background bg-primary/10 shadow-lg shadow-primary/10">
-              {user?.profileImageUrl ? (
+              {previewImageUrl ? (
                 <img
-                  src={user.profileImageUrl}
-                  alt={`${user.nickname} 프로필 이미지`}
-                  loading="lazy"
+                  src={previewImageUrl}
+                  alt={`${user?.nickname ?? ''} 프로필 이미지`}
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="material-symbols-outlined text-6xl text-muted-foreground/40">
-                  person
-                </span>
+                <Icon name="person" className="text-6xl text-muted-foreground/40" />
               )}
             </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePickImage}
+              className="sr-only"
+              aria-label="프로필 사진 파일 선택"
+            />
             <button
               type="button"
-              disabled
-              aria-label="프로필 사진 변경 (준비 중)"
-              className="absolute bottom-1 right-1 flex items-center justify-center rounded-full bg-primary/60 p-2 text-primary-foreground shadow-md"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isProcessingImage}
+              aria-label="프로필 사진 변경"
+              className="absolute bottom-1 right-1 flex items-center justify-center rounded-full bg-primary p-2 text-primary-foreground shadow-md transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
             >
-              <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+              <Icon
+                name={isProcessingImage ? 'hourglass_top' : 'photo_camera'}
+                className="text-[20px]"
+              />
             </button>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">사진 변경은 추후 지원 예정입니다</p>
+
+          {pendingImage ? (
+            <button
+              type="button"
+              onClick={() => setPendingImage(null)}
+              className="mt-3 text-xs font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            >
+              선택한 사진 취소
+            </button>
+          ) : (
+            <p className="mt-3 text-xs text-muted-foreground">
+              사진을 눌러 프로필 이미지를 변경하세요
+            </p>
+          )}
         </section>
 
         {/* Form */}

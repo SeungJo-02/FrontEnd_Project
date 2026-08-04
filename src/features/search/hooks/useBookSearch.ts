@@ -8,6 +8,7 @@ import {
   isbnResultToSummary,
   toSearchErrorMessage,
 } from '@/features/search/types'
+import { isBoxSetTitle } from '@/features/search/isBoxSet'
 import { useDebouncedValue } from './useDebouncedValue'
 
 interface BookSearchPage {
@@ -69,7 +70,7 @@ export function useBookSearch(query: string, isActive: boolean): BookSearchView 
     enabled,
   })
 
-  // 페이지 간 bookId 중복 제거(무한스크롤 dedup 정책 보존).
+  // 페이지 간 bookId 중복 제거(무한스크롤 dedup 정책 보존) + 세트 상품 제외.
   const books = useMemo(() => {
     if (isDebouncing) return []
     const seen = new Set<number>()
@@ -78,6 +79,9 @@ export function useBookSearch(query: string, isActive: boolean): BookSearchView 
       for (const book of page.content) {
         if (seen.has(book.bookId)) continue
         seen.add(book.bookId)
+        // 알라딘은 `1~14권 세트` 같은 묶음 상품도 같이 돌려준다. 한 권 단위로 읽고
+        // 기록하는 앱이라 서재에 담을 수 없는 결과여서 목록에서 제외한다.
+        if (isBoxSetTitle(book.title)) continue
         result.push(book)
       }
     }

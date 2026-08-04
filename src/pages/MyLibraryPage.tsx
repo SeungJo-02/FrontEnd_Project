@@ -10,11 +10,26 @@ import {
   type LibraryBookSummary,
   type ReadingStatus,
 } from '@/api/library'
+import { getMyReviews, REVIEW_PAGE_SIZE, type ReviewListItem } from '@/api/review'
+
+/** 배지용 감상 목록 조회 상한 — 무한정 커서를 따라가지 않도록 제한한다. */
+const REVIEW_MAX_PAGES = 10
 import {
   LIBRARY_FILTERS as filters,
   LIBRARY_STATUS_BADGE as statusBadge,
   type LibraryFilterValue as FilterValue,
 } from '@/constants/library'
+import Icon from '@/components/common/Icon'
+import CollectionSheet from '@/components/library/CollectionSheet'
+import {
+  applyLibraryOrder,
+  getCollections,
+  getLibraryOrder,
+  saveLibraryOrder,
+  toggleCollectionBook,
+  type BookCollection,
+} from '@/lib/libraryStore'
+import { useGridDragReorder } from '@/hooks/useGridDragReorder'
 
 export default function MyLibraryPage() {
   const [activeFilter, setActiveFilter] = useState<FilterValue>('all')
@@ -38,6 +53,43 @@ export default function MyLibraryPage() {
    */
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  /**
+   * 임시저장(DRAFT) 감상이 있는 책의 bookId 집합.
+   *
+   * 서재 응답의 `hasReview`는 발행된 감상만 알려주므로, '작성중' 배지를 붙이려면
+   * 초안 목록을 따로 받아 bookId로 맞춰봐야 한다. 실패해도 배지만 빠지고
+   * 서재 그리드는 정상 동작하도록 조용히 무시한다.
+   */
+  const [draftBookIds, setDraftBookIds] = useState<Set<number>>(() => new Set())
+  /**
+   * 발행(PUBLISHED) 감상이 있는 책의 bookId 집합.
+   *
+   * 서재 응답의 `hasReview`만 믿으면 백엔드가 그 필드를 채우지 않을 때 배지가 통째로
+   * 사라진다. 실제로 그런 상태여서, 내 감상 목록으로 직접 판정하는 경로를 함께 둔다.
+   */
+  const [reviewedBookIds, setReviewedBookIds] = useState<Set<number>>(() => new Set())
+
+  /** 보고 있는 모음집(null이면 서재 전체). */
+  const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null)
+  const [collections, setCollections] = useState<BookCollection[]>(() => getCollections())
+  const [isCollectionSheetOpen, setIsCollectionSheetOpen] = useState(false)
+  /** 모음에 담을 책을 고르는 모드 — 카드를 눌러 담기/빼기를 토글한다. */
+  const [isPickingBooks, setIsPickingBooks] = useState(false)
+  /** 드래그 중 임시 순서. null이면 저장된 순서를 쓴다. */
+  const [dragOrderedItems, setDragOrderedItems] = useState<LibraryBookSummary[] | null>(null)
+  /**
+   * 지금 보고 있는 화면의 사용자 정의 순서(서재책 ID 배열).
+   * 전체와 각 모음집은 순서를 따로 기억하므로, 모음을 옮길 때마다 다시 읽어온다.
+   */
+  const [customOrder, setCustomOrder] = useState<number[]>(() => getLibraryOrder(null))
+
+  const activeCollection = collections.find(item => item.id === activeCollectionId) ?? null
+
+  // 화면(전체 ↔ 모음집)이 바뀌면 그 화면에 저장해둔 순서로 갈아끼운다.
+  useEffect(() => {
+    setCustomOrder(getLibraryOrder(activeCollectionId))
+    setDragOrderedItems(null)
+  }, [activeCollectionId])
 
   const observerRef = useRef<IntersectionObserver | null>(null)
   const moreControllerRef = useRef<AbortController | null>(null)
@@ -175,6 +227,48 @@ export default function MyLibraryPage() {
 
   useEffect(() => () => observerRef.current?.disconnect(), [])
 
+  // 감상 배지용 보조 데이터(발행/임시저장). 배지 전용이라 실패해도 서재 그리드에는
+  // 영향을 주지 않는다.
+  useEffect(() => {
+    const controller = new AbortController()
+
+    /** 커서를 따라가며 해당 상태 감상의 bookId를 모은다. */
+    const collectBookIds = async (status: 'PUBLISHED' | 'DRAFT') => {
+      const ids = new Set<number>()
+      let cursor: number | null = null
+
+      for (let page = 0; page < REVIEW_MAX_PAGES; page++) {
+        const items: ReviewListItem[] = await getMyReviews({
+          cursor,
+          status,
+          signal: controller.signal,
+        })
+        if (controller.signal.aborted) return ids
+        items.forEach(item => ids.add(item.book.bookId))
+        if (items.length < REVIEW_PAGE_SIZE) break
+        cursor = items[items.length - 1].reviewId
+      }
+      return ids
+    }
+
+    ;(async () => {
+      try {
+        const [published, drafts] = await Promise.all([
+          collectBookIds('PUBLISHED'),
+          collectBookIds('DRAFT'),
+        ])
+        if (controller.signal.aborted) return
+        setReviewedBookIds(published)
+        setDraftBookIds(drafts)
+      } catch (error) {
+        if (axios.isCancel(error) || controller.signal.aborted) return
+        if (import.meta.env.DEV) console.error('감상 배지 데이터를 불러오지 못했습니다:', error)
+      }
+    })()
+
+    return () => controller.abort()
+  }, [])
+
   // 필터 변경 시 활성 칩이 시야 밖이면 가운데로 자동 스크롤. "중단"이 잘려서 안 보이는
   // 문제와 모바일 좁은 화면에서 활성 칩이 시야 밖에 있을 때 모두 커버.
   useEffect(() => {
@@ -198,17 +292,60 @@ export default function MyLibraryPage() {
    *
    * 입력 정규화: 양끝 공백 제거 후 소문자 비교. 클라이언트 측이라 추가 API 호출 없음.
    */
-  const visibleItems = useMemo(() => {
+  const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
-    if (!q) return items
-    return items.filter(item => {
-      const title = item.book.title?.toLowerCase() ?? ''
-      const author = item.book.author?.toLowerCase() ?? ''
-      return title.includes(q) || author.includes(q)
-    })
-  }, [items, searchQuery])
+    const bySearch = !q
+      ? items
+      : items.filter(item => {
+          const title = item.book.title?.toLowerCase() ?? ''
+          const author = item.book.author?.toLowerCase() ?? ''
+          return title.includes(q) || author.includes(q)
+        })
+
+    // 모음집을 보고 있으면 담긴 책만 남긴다(담기 모드에서는 전체를 보여줘야 고를 수 있다).
+    if (!activeCollection || isPickingBooks) return bySearch
+    const picked = new Set(activeCollection.libraryBookIds)
+    return bySearch.filter(item => picked.has(item.libraryBookId))
+  }, [items, searchQuery, activeCollection, isPickingBooks])
+
+  /**
+   * 화면에 그릴 순서. 드래그 중에는 `dragOrderedItems`가 우선하고, 평소에는
+   * 저장된 사용자 정의 순서를 적용한다.
+   */
+  const visibleItems = useMemo(
+    () =>
+      dragOrderedItems ?? applyLibraryOrder(filteredItems, item => item.libraryBookId, customOrder),
+    [dragOrderedItems, filteredItems, customOrder]
+  )
 
   const isSearching = searchQuery.trim().length > 0
+
+  // 검색·담기 중에는 목록이 임시로 걸러진 상태라 그때의 순서를 저장하면 안 된다.
+  const canReorder = !isSearching && !isPickingBooks
+
+  const handleCommitOrder = useCallback(
+    (next: LibraryBookSummary[]) => {
+      const order = next.map(item => item.libraryBookId)
+      saveLibraryOrder(order, activeCollectionId)
+      setCustomOrder(order)
+      setDragOrderedItems(null)
+    },
+    [activeCollectionId]
+  )
+
+  const { draggingId, registerNode, onPointerDown, onClickCapture } = useGridDragReorder({
+    items: visibleItems,
+    getId: item => item.libraryBookId,
+    onReorder: setDragOrderedItems,
+    onCommit: handleCommitOrder,
+    disabled: !canReorder,
+  })
+
+  const handleToggleInCollection = (libraryBookId: number) => {
+    if (!activeCollectionId) return
+    toggleCollectionBook(activeCollectionId, libraryBookId)
+    setCollections(getCollections())
+  }
 
   /**
    * 검색 입력창 토글 핸들러. 닫을 때는 검색어를 함께 초기화하여 사용자가 같은
@@ -237,9 +374,7 @@ export default function MyLibraryPage() {
             aria-expanded={isSearchOpen}
             className="flex w-10 items-center justify-center rounded-full p-2 transition-colors hover:bg-primary/10"
           >
-            <span className="material-symbols-outlined text-primary">
-              {isSearchOpen ? 'close' : 'search'}
-            </span>
+            <Icon name={isSearchOpen ? 'close' : 'search'} className="text-primary" />
           </button>
         </div>
         {isSearchOpen && (
@@ -289,15 +424,54 @@ export default function MyLibraryPage() {
 
       {/* Book Count — 검색 중엔 검색 결과 수 표시, 일반 시엔 전체 권수.
           [code-review HIGH fix] 검색 결과도 hasNext일 때 "+"를 붙여 추가 페이지 매치 가능성을 명시. */}
-      <div className="px-4 py-2">
-        {!isLoading && !errorMessage && (
-          <p className="text-sm font-medium">
+      <div className="flex items-center justify-between gap-3 px-4 py-2">
+        {!isLoading && !errorMessage ? (
+          <p className="min-w-0 flex-1 truncate text-sm font-medium">
             {isSearching
               ? `검색 결과 ${visibleItems.length}권${hasNext ? '+' : ''}`
-              : `총 ${items.length}권${hasNext ? '+' : ''}`}
+              : activeCollection
+                ? `${activeCollection.name} · ${activeCollection.libraryBookIds.length}권`
+                : `총 ${items.length}권${hasNext ? '+' : ''}`}
           </p>
+        ) : (
+          <span className="flex-1" />
         )}
+
+        <div className="flex shrink-0 items-center gap-1">
+          {activeCollection && (
+            <button
+              type="button"
+              onClick={() => setIsPickingBooks(prev => !prev)}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
+                isPickingBooks
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-primary/10 text-primary hover:bg-primary/20'
+              )}
+            >
+              {isPickingBooks ? '완료' : '책 담기'}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsCollectionSheetOpen(true)}
+            aria-label="책 모음 관리"
+            className={cn(
+              'flex size-9 items-center justify-center rounded-full transition-colors hover:bg-primary/10',
+              activeCollection ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+            )}
+          >
+            <Icon name="folder" className="text-xl" filled={activeCollection != null} />
+          </button>
+        </div>
       </div>
+
+      {isPickingBooks && (
+        <p className="px-4 pb-2 text-xs text-muted-foreground">
+          담을 책을 눌러 선택하세요. 다시 누르면 빠집니다.
+        </p>
+      )}
 
       {/* Book Grid */}
       <main className="flex-1 overflow-y-auto px-4 pb-24">
@@ -362,12 +536,27 @@ export default function MyLibraryPage() {
                 // 백엔드가 알 수 없는 enum 값을 반환해도 그리드 전체가 크래시하지 않도록 방어
                 const frontStatus: ReadingStatus | undefined = backendToFrontStatus[item.status]
                 const badge = frontStatus ? statusBadge[frontStatus] : null
-                return (
-                  <Link
-                    key={item.libraryBookId}
-                    to={`/library/${item.libraryBookId}`}
-                    className="relative flex flex-col gap-2"
-                  >
+                // 발행된 감상이 우선. 초안만 있으면 '작성중'.
+                const hasPublishedReview = item.hasReview || reviewedBookIds.has(item.book.bookId)
+                const reviewBadge = hasPublishedReview
+                  ? { text: '감상작성완', className: 'bg-primary text-primary-foreground' }
+                  : draftBookIds.has(item.book.bookId)
+                    ? { text: '작성중', className: 'bg-accent text-accent-foreground' }
+                    : null
+                const isDragging = draggingId === item.libraryBookId
+                const isInCollection =
+                  activeCollection?.libraryBookIds.includes(item.libraryBookId) ?? false
+
+                // transform/transition은 드래그 훅이 FLIP 애니메이션과 함께 인라인으로
+                // 관리한다. 여기서 scale을 주면 애니메이션 중 값이 서로 덮어써진다.
+                const cardClassName = cn(
+                  'relative flex flex-col gap-2 text-left',
+                  isDragging && 'z-10 opacity-90 drop-shadow-lg',
+                  canReorder && 'touch-none'
+                )
+
+                const cardBody = (
+                  <>
                     <div className="group relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-primary/5 shadow-md">
                       {item.book.coverImageUrl ? (
                         <img
@@ -378,9 +567,7 @@ export default function MyLibraryPage() {
                         />
                       ) : (
                         <div className="flex size-full items-center justify-center">
-                          <span className="material-symbols-outlined text-3xl text-muted-foreground/30">
-                            menu_book
-                          </span>
+                          <Icon name="menu_book" className="text-3xl text-muted-foreground/30" />
                         </div>
                       )}
                       {badge && (
@@ -393,22 +580,70 @@ export default function MyLibraryPage() {
                           {badge.text}
                         </div>
                       )}
-                      {item.hasReview && (
+                      {reviewBadge && (
+                        <span
+                          className={cn(
+                            'absolute right-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm',
+                            reviewBadge.className
+                          )}
+                        >
+                          {reviewBadge.text}
+                        </span>
+                      )}
+
+                      {/* 담기 모드 — 선택 여부를 표지 위에 덮어 보여준다 */}
+                      {isPickingBooks && (
                         <div
-                          role="img"
-                          aria-label="감상 작성됨"
-                          className="absolute left-1 top-1 rounded-full bg-background/90 p-1 text-primary shadow-sm"
+                          className={cn(
+                            'absolute inset-0 flex items-center justify-center transition-colors',
+                            isInCollection ? 'bg-primary/35' : 'bg-black/25'
+                          )}
                         >
                           <span
-                            aria-hidden="true"
-                            className="material-symbols-outlined text-[14px]"
+                            className={cn(
+                              'flex size-9 items-center justify-center rounded-full border-2 transition-colors',
+                              isInCollection
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-white/80 bg-black/20 text-transparent'
+                            )}
                           >
-                            edit_note
+                            <Icon name="check" className="text-xl" />
                           </span>
                         </div>
                       )}
                     </div>
                     <p className="line-clamp-1 text-xs font-semibold">{item.book.title}</p>
+                  </>
+                )
+
+                // 담기 모드에서는 이동이 아니라 선택이므로 링크가 아닌 버튼으로 그린다.
+                return isPickingBooks ? (
+                  <button
+                    key={item.libraryBookId}
+                    type="button"
+                    onClick={() => handleToggleInCollection(item.libraryBookId)}
+                    aria-pressed={isInCollection}
+                    ref={node => registerNode(item.libraryBookId, node)}
+                    onPointerDown={e => onPointerDown(e, item.libraryBookId)}
+                    onClickCapture={onClickCapture}
+                    className={cardClassName}
+                  >
+                    {cardBody}
+                  </button>
+                ) : (
+                  <Link
+                    key={item.libraryBookId}
+                    to={`/book/${item.book.bookId}`}
+                    ref={node => registerNode(item.libraryBookId, node)}
+                    onPointerDown={e => onPointerDown(e, item.libraryBookId)}
+                    onClickCapture={onClickCapture}
+                    // 링크는 기본적으로 draggable이라, 끌기 시작하면 브라우저의 네이티브 링크
+                    // 드래그가 포인터 이벤트를 가로채 순서 변경이 먹히지 않는다.
+                    draggable={false}
+                    onDragStart={e => e.preventDefault()}
+                    className={cardClassName}
+                  >
+                    {cardBody}
                   </Link>
                 )
               })}
@@ -448,6 +683,18 @@ export default function MyLibraryPage() {
           </div>
         )}
       </main>
+
+      <CollectionSheet
+        isOpen={isCollectionSheetOpen}
+        onClose={() => setIsCollectionSheetOpen(false)}
+        activeId={activeCollectionId}
+        onSelect={id => {
+          setActiveCollectionId(id)
+          // 모음을 바꾸면 담기 모드는 끝낸다 — 다른 모음에 잘못 담는 사고 방지.
+          setIsPickingBooks(false)
+        }}
+        onChanged={() => setCollections(getCollections())}
+      />
 
       <BottomNav />
     </div>

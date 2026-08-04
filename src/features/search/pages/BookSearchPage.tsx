@@ -148,7 +148,8 @@ export default function BookSearchPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <AppHeader title="Shelfeed" showBack />
+      {/* 검색은 하단 탭의 1차 진입점이라 되돌아갈 곳이 없다 — 뒤로가기를 두지 않는다 */}
+      <AppHeader title="Shelfeed" />
 
       <SearchBar
         value={searchQuery}

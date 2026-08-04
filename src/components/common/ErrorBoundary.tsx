@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import Icon from '@/components/common/Icon'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -43,7 +44,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <span className="material-symbols-outlined text-5xl text-muted-foreground">error</span>
+        <Icon name="error" className="text-5xl text-muted-foreground" />
         <h1 className="text-lg font-bold text-foreground">문제가 발생했습니다</h1>
         <p className="text-sm text-muted-foreground">
           예상치 못한 오류로 화면을 표시할 수 없습니다. 잠시 후 다시 시도해주세요.

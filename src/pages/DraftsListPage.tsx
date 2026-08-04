@@ -6,6 +6,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import { EmptyState } from '@/components/common/EmptyState'
 import { deleteReview, getMyReviews, REVIEW_PAGE_SIZE, type ReviewListItem } from '@/api/review'
 import { formatRelativeTime } from '@/lib/utils'
+import Icon from '@/components/common/Icon'
 
 /**
  * 임시저장(DRAFT) 감상 보관함.
@@ -144,9 +145,7 @@ export default function DraftsListPage() {
                         className="size-full object-cover"
                       />
                     ) : (
-                      <span className="material-symbols-outlined text-3xl text-muted-foreground/30">
-                        menu_book
-                      </span>
+                      <Icon name="menu_book" className="text-3xl text-muted-foreground/30" />
                     )}
                   </div>
 
@@ -170,9 +169,10 @@ export default function DraftsListPage() {
                   aria-label="임시저장 삭제"
                   className="flex size-9 shrink-0 items-center justify-center self-start rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-[20px]">
-                    {deletingId === draft.reviewId ? 'progress_activity' : 'delete'}
-                  </span>
+                  <Icon
+                    name={deletingId === draft.reviewId ? 'progress_activity' : 'delete'}
+                    className="text-[20px]"
+                  />
                 </button>
               </div>
             ))}

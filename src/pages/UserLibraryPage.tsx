@@ -18,6 +18,7 @@ import {
   LIBRARY_STATUS_BADGE as statusBadge,
   type LibraryFilterValue as FilterValue,
 } from '@/constants/library'
+import Icon from '@/components/common/Icon'
 
 export default function UserLibraryPage() {
   const { userId } = useParams<{ userId: string }>()
@@ -214,12 +215,7 @@ export default function UserLibraryPage() {
       {/* PRIVATE 분기: 필터/카운트/그리드 모두 숨기고 풀스크린 안내 */}
       {isPrivate ? (
         <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pb-12">
-          <span
-            aria-hidden="true"
-            className="material-symbols-outlined text-6xl text-muted-foreground/30"
-          >
-            lock
-          </span>
+          <Icon name="lock" className="text-6xl text-muted-foreground/30" />
           <h2 className="text-lg font-bold text-foreground">비공개 서재입니다</h2>
           <p className="max-w-xs text-center text-sm text-muted-foreground">
             이 사용자가 서재를 공개하지 않았어요.
@@ -317,9 +313,10 @@ export default function UserLibraryPage() {
                             />
                           ) : (
                             <div className="flex size-full items-center justify-center">
-                              <span className="material-symbols-outlined text-3xl text-muted-foreground/30">
-                                menu_book
-                              </span>
+                              <Icon
+                                name="menu_book"
+                                className="text-3xl text-muted-foreground/30"
+                              />
                             </div>
                           )}
                           {badge && (
@@ -338,12 +335,7 @@ export default function UserLibraryPage() {
                               aria-label="감상 작성됨"
                               className="absolute left-1 top-1 rounded-full bg-background/90 p-1 text-primary shadow-sm"
                             >
-                              <span
-                                aria-hidden="true"
-                                className="material-symbols-outlined text-[14px]"
-                              >
-                                edit_note
-                              </span>
+                              <Icon name="edit_note" className="text-[14px]" />
                             </div>
                           )}
                         </div>

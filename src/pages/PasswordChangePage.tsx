@@ -7,6 +7,7 @@ import AppHeader from '@/components/layout/AppHeader'
 import { changePassword } from '@/api/member'
 import { PASSWORD_HINT, PASSWORD_REGEX } from '@/constants/validation'
 import { FORM_INPUT_CLASS } from '@/constants/form'
+import Icon from '@/components/common/Icon'
 
 const PASSWORD_MAX_LENGTH = 64
 
@@ -76,7 +77,7 @@ export default function PasswordChangePage() {
             aria-live="polite"
             className="flex flex-col items-center gap-4 pt-16 text-center"
           >
-            <span className="material-symbols-outlined text-5xl text-primary">check_circle</span>
+            <Icon name="check_circle" className="text-5xl text-primary" />
             <h2 className="text-2xl font-bold text-foreground">비밀번호가 변경되었습니다</h2>
             <p className="text-base text-muted-foreground">
               변경된 비밀번호로 계속 이용하실 수 있습니다.

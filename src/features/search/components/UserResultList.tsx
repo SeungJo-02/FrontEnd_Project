@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import UserSearchCard from '@/components/common/UserSearchCard'
 import type { UserSearchItem } from '@/api/search'
+import Icon from '@/components/common/Icon'
 
 interface UserResultListProps {
   query: string
@@ -70,9 +71,7 @@ export default function UserResultList({
   if (!isLoading && !errorMessage && users.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-          person_search
-        </span>
+        <Icon name="person_search" className="text-5xl text-muted-foreground/30" />
         <p className="max-w-full truncate text-sm text-muted-foreground">
           &lsquo;{query}&rsquo;에 대한 유저 검색 결과가 없습니다.
         </p>

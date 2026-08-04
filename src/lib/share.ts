@@ -18,7 +18,7 @@ export interface ShareLinkOptions {
 /**
  * 상대 경로를 현재 origin 기준 절대 URL로 변환한다. 이미 절대 URL이면 그대로 둔다.
  */
-function toAbsoluteUrl(path: string): string {
+export function toAbsoluteUrl(path: string): string {
   if (/^https?:\/\//.test(path)) return path
   return `${window.location.origin}${path.startsWith('/') ? '' : '/'}${path}`
 }

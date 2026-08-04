@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 import { clearRecentKeywords } from '@/features/search/hooks/useRecentKeywords'
 import { clearFeedCache } from '@/store/feedStore'
 import type { EmailVerifyLocationState } from '@/pages/EmailVerificationPage'
+import Icon from '@/components/common/Icon'
 
 function Toggle({
   checked,
@@ -86,9 +87,7 @@ function LinkRow({ title, description, onClick, noBorder = false }: LinkRowProps
         <p className="text-[18px] font-medium leading-tight text-foreground">{title}</p>
         {description && <p className="mt-2 text-sm text-primary/80">{description}</p>}
       </div>
-      <span className="material-symbols-outlined text-[24px] text-muted-foreground">
-        chevron_right
-      </span>
+      <Icon name="chevron_right" className="text-[24px] text-muted-foreground" />
     </button>
   )
 }
@@ -225,9 +224,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px] text-amber-600">
-                    warning
-                  </span>
+                  <Icon name="warning" className="text-[20px] text-amber-600" />
                   <span className="text-sm font-medium text-foreground">
                     이메일 인증이 완료되지 않았습니다.
                   </span>
@@ -414,7 +411,7 @@ export default function SettingsPage() {
         <section className="px-5 pb-10 pt-16">
           <div className="text-center text-primary/20">
             <div className="mb-2 flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-[18px]">menu_book</span>
+              <Icon name="menu_book" className="text-[18px]" />
               <span className="text-2xl italic">Shelfeed</span>
             </div>
             <p className="text-sm uppercase tracking-wider">Version 2.4.0</p>

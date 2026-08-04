@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Icon from '@/components/common/Icon'
 
 type CameraStatus =
   | 'initializing'
@@ -253,7 +254,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
           aria-label="카메라 닫기"
           className="flex size-10 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
         >
-          <span className="material-symbols-outlined">close</span>
+          <Icon name="close" />
         </button>
         <h2 className="flex-1 text-center text-base font-bold">카메라 촬영</h2>
         {showDeviceSelect ? (
@@ -293,7 +294,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
               onClick={handleRetake}
               className="flex items-center gap-2 rounded-xl border-2 border-white/60 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-white/10"
             >
-              <span className="material-symbols-outlined text-[20px]">refresh</span>
+              <Icon name="refresh" className="text-[20px]" />
               다시 촬영
             </button>
             <button
@@ -301,7 +302,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
               onClick={handleConfirmCapture}
               className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-base font-bold text-primary-foreground shadow-lg transition-transform active:scale-[0.98]"
             >
-              <span className="material-symbols-outlined text-[20px]">send</span>
+              <Icon name="send" className="text-[20px]" />
               보내기
             </button>
           </footer>
@@ -326,9 +327,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
 
             {errorMessage && (
               <div className="absolute inset-x-0 top-1/2 mx-6 -translate-y-1/2 rounded-2xl bg-white/95 p-6 text-center text-foreground">
-                <span className="material-symbols-outlined mb-2 text-4xl text-destructive">
-                  error
-                </span>
+                <Icon name="error" className="mb-2 text-4xl text-destructive" />
                 <p role="alert" className="mb-4 text-sm font-medium">
                   {errorMessage}
                 </p>

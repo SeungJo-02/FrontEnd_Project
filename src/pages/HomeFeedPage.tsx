@@ -2,46 +2,21 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { cn } from '@/lib/utils'
-import { getFollowingFeed, getRecommendFeed, type FeedItem, type RecommendItem } from '@/api/feed'
+import { getFeed, type FeedItem } from '@/api/feed'
 import { getUnreadNotificationCount } from '@/api/notification'
 import BottomNav from '@/components/layout/BottomNav'
 import { EmptyState } from '@/components/common/EmptyState'
 import PopupBanner from '@/components/common/PopupBanner'
 import ReviewCard, { type ReviewCardData } from '@/components/common/ReviewCard'
-import { useFeedStore, setFeedTabCache, type FeedTab } from '@/store/feedStore'
+import { useFeedStore, setFeedCache, clearFeedCache } from '@/store/feedStore'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import Icon from '@/components/common/Icon'
 
 /**
  * 백엔드 `FeedItem` 응답을 `ReviewCardData`로 매핑한다.
  * 슬림 타입이라 더미 필드 없이 필요한 정보만 전달.
  */
 function toReviewCardData(item: FeedItem): ReviewCardData {
-  return {
-    id: item.review.reviewId,
-    content: item.review.content,
-    book: {
-      title: item.review.book.title,
-      author: item.review.book.author,
-      coverImageUrl: item.review.book.coverImageUrl ?? '',
-    },
-    author: {
-      id: item.review.user.userId,
-      nickname: item.review.user.nickname,
-      profileImageUrl: item.review.user.profileImageUrl ?? undefined,
-    },
-    likeCount: item.review.likeCount,
-    isLiked: item.review.isLiked,
-    createdAt: item.review.createdAt,
-    rating: item.review.rating,
-    hasSpoiler: item.review.isSpoiler,
-    commentCount: item.review.commentCount,
-  }
-}
-
-/**
- * 백엔드 `RecommendItem` 응답을 `ReviewCardData`로 매핑한다.
- * `FeedItem`과 달리 feedId 래퍼 없이 리뷰 필드가 최상위에 직접 노출.
- */
-function recommendToCard(item: RecommendItem): ReviewCardData {
   return {
     id: item.reviewId,
     content: item.content,
@@ -67,25 +42,23 @@ function recommendToCard(item: RecommendItem): ReviewCardData {
 /**
  * 홈 피드 페이지.
  *
- * - 팔로잉 탭: 사용자가 팔로우한 유저들의 감상을 cursor 기반으로 페이지네이션.
- *   `IntersectionObserver`로 sentinel을 감지하여 무한스크롤로 자연스럽게 다음 페이지 로딩.
- * - 추천 탭: 장르 기반·소셜·인기 하이브리드 추천 알고리즘의 감상을 복합 커서
- *   (cursorLike + cursorId)로 페이지네이션. sentinel/observer는 팔로잉 탭과 공유.
+ * 팔로우한 사용자의 감상과 추천 감상이 **하나의 피드**로 합쳐져 내려온다. 별도 탭이 없고
+ * 정렬은 항상 작성 시각 최신순이다 — 새로 팔로우한 사용자의 과거 감상이 최상단으로
+ * 올라오지 않는다.
  *
  * **데이터 흐름**:
- * 1. 마운트 또는 탭 전환 시 활성 탭 API(팔로잉: `getFollowingFeed`, 추천: `getRecommendFeed`)로 첫 페이지 요청
+ * 1. 마운트 시 `getFeed`로 첫 페이지 요청 (캐시가 있으면 복원)
  * 2. sentinel이 viewport 200px 안으로 들어오면 다음 페이지 요청
- * 3. 응답 도중 탭이 바뀌면 stale guard로 결과 폐기
+ * 3. 커서는 (작성 시각, 리뷰 ID) 한 쌍으로 이어받는다
  *
  * **상태 동기화**:
  * - `stateRef`로 observer 콜백에서 최신 state를 안전하게 읽어 deps 폭주를 회피
  * - `moreControllerRef`로 진행 중인 추가 로딩 요청을 새 요청 시 명시적으로 취소
  * - `loadMoreError` 발생 시 observer 콜백이 자동 재시도하지 않고 사용자가 "다시 불러오기"로 명시 재시도
  *
- * @returns 헤더(로고/알림) + 탭(팔로잉/추천) + 피드 리스트 + BottomNav를 렌더링하는 React 엘리먼트
+ * @returns 헤더(로고/알림) + 통합 피드 리스트 + BottomNav를 렌더링하는 React 엘리먼트
  */
 export default function HomeFeedPage() {
-  const [activeTab, setActiveTab] = useState<FeedTab>(() => useFeedStore.getState().activeTab)
   /**
    * 종 아이콘 미읽음 알림 카운트.
    *
@@ -97,9 +70,8 @@ export default function HomeFeedPage() {
   const [unreadCount, setUnreadCount] = useState(0)
 
   const [items, setItems] = useState<ReviewCardData[]>([])
-  const [nextCursor, setNextCursor] = useState<number | null>(null)
+  const [nextCursorCreatedAt, setNextCursorCreatedAt] = useState<string | null>(null)
   const [nextCursorId, setNextCursorId] = useState<number | null>(null)
-  const [nextCursorLike, setNextCursorLike] = useState<number | null>(null)
   const [hasNext, setHasNext] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -115,42 +87,58 @@ export default function HomeFeedPage() {
     hasNext,
     isLoading,
     isLoadingMore,
-    nextCursor,
+    nextCursorCreatedAt,
     nextCursorId,
-    nextCursorLike,
-    activeTab,
     loadMoreError,
   })
   stateRef.current = {
     hasNext,
     isLoading,
     isLoadingMore,
-    nextCursor,
+    nextCursorCreatedAt,
     nextCursorId,
-    nextCursorLike,
-    activeTab,
     loadMoreError,
   }
 
   /**
-   * 탭 전환·마운트 시 피드 데이터를 로딩하거나 캐시에서 복원한다.
+   * 최상단에서 당겨서 새로고침. 첫 페이지를 다시 받아 목록·커서를 통째로 교체하고
+   * 저장된 피드 캐시를 비워, 재진입 시 방금 받은 최신 피드가 쓰이도록 한다.
+   */
+  const refreshFeed = useCallback(async () => {
+    moreControllerRef.current?.abort()
+    setErrorMessage(null)
+    setLoadMoreError(null)
+    try {
+      const response = await getFeed({ cursorCreatedAt: null, cursorId: null })
+      setItems(response.content.map(toReviewCardData))
+      setNextCursorCreatedAt(response.nextCursorCreatedAt)
+      setNextCursorId(response.nextCursorId)
+      setHasNext(response.hasNext)
+      clearFeedCache()
+    } catch (error) {
+      if (axios.isCancel(error)) return
+      setErrorMessage(error instanceof Error ? error.message : '피드를 새로고침하지 못했습니다.')
+    }
+  }, [])
+
+  const { pullDistance, isRefreshing, willRefresh } = usePullToRefresh({ onRefresh: refreshFeed })
+
+  /**
+   * 마운트 시 피드 데이터를 로딩하거나 캐시에서 복원한다.
    *
-   * feedStore에 해당 탭 캐시가 있으면 API 호출 없이 복원 후 스크롤 위치까지 재현.
-   * 캐시가 없으면 기존대로 API에서 첫 페이지를 가져온다.
-   * cleanup에서 현재 탭의 피드 데이터 + scrollY를 feedStore에 저장하여
-   * 다음 방문 시 복원할 수 있도록 한다.
+   * feedStore에 캐시가 있으면 API 호출 없이 복원 후 스크롤 위치까지 재현.
+   * 캐시가 없으면 API에서 첫 페이지를 가져온다.
+   * cleanup에서 피드 데이터 + scrollY를 feedStore에 저장하여 다음 방문 시 복원한다.
    */
   useEffect(() => {
-    const currentTab = activeTab
-    const cache = useFeedStore.getState()[currentTab]
+    const cache = useFeedStore.getState().feed
 
-    const saveCurrentTab = () => {
+    const saveFeed = () => {
       if (itemsRef.current.length === 0) return
-      setFeedTabCache(currentTab, {
+      setFeedCache({
         items: itemsRef.current,
-        nextCursor: stateRef.current.nextCursor,
+        nextCursorCreatedAt: stateRef.current.nextCursorCreatedAt,
         nextCursorId: stateRef.current.nextCursorId,
-        nextCursorLike: stateRef.current.nextCursorLike,
         hasNext: stateRef.current.hasNext,
         scrollY: window.scrollY,
       })
@@ -158,9 +146,8 @@ export default function HomeFeedPage() {
 
     if (cache && cache.items.length > 0) {
       setItems(cache.items)
-      setNextCursor(cache.nextCursor)
+      setNextCursorCreatedAt(cache.nextCursorCreatedAt)
       setNextCursorId(cache.nextCursorId)
-      setNextCursorLike(cache.nextCursorLike)
       setHasNext(cache.hasNext)
       setIsLoading(false)
       setIsLoadingMore(false)
@@ -173,45 +160,24 @@ export default function HomeFeedPage() {
 
       return () => {
         moreControllerRef.current?.abort()
-        saveCurrentTab()
+        saveFeed()
       }
     }
-
-    setIsLoadingMore(false)
-    setLoadMoreError(null)
-    moreControllerRef.current?.abort()
-    setItems([])
-    setNextCursor(null)
-    setNextCursorId(null)
-    setNextCursorLike(null)
-    setHasNext(false)
-    setErrorMessage(null)
 
     const controller = new AbortController()
     setIsLoading(true)
     ;(async () => {
       try {
-        if (currentTab === 'following') {
-          const response = await getFollowingFeed({
-            cursor: null,
-            signal: controller.signal,
-          })
-          if (controller.signal.aborted) return
-          setItems(response.content.map(toReviewCardData))
-          setNextCursor(response.nextCursor)
-          setHasNext(response.hasNext)
-        } else {
-          const response = await getRecommendFeed({
-            cursorLike: null,
-            cursorId: null,
-            signal: controller.signal,
-          })
-          if (controller.signal.aborted) return
-          setItems(response.content.map(recommendToCard))
-          setNextCursorId(response.nextCursorId)
-          setNextCursorLike(response.nextCursorLike)
-          setHasNext(response.hasNext)
-        }
+        const response = await getFeed({
+          cursorCreatedAt: null,
+          cursorId: null,
+          signal: controller.signal,
+        })
+        if (controller.signal.aborted) return
+        setItems(response.content.map(toReviewCardData))
+        setNextCursorCreatedAt(response.nextCursorCreatedAt)
+        setNextCursorId(response.nextCursorId)
+        setHasNext(response.hasNext)
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
         setErrorMessage(error instanceof Error ? error.message : '피드를 불러오지 못했습니다.')
@@ -223,9 +189,9 @@ export default function HomeFeedPage() {
     return () => {
       controller.abort()
       moreControllerRef.current?.abort()
-      saveCurrentTab()
+      saveFeed()
     }
-  }, [activeTab])
+  }, [])
 
   /**
    * 미읽음 알림 개수를 조회해 종 아이콘 뱃지에 반영한다.
@@ -235,7 +201,7 @@ export default function HomeFeedPage() {
    * - `visibilitychange`로 탭이 백그라운드 → 포그라운드로 돌아오면 다시 조회.
    * - 실패는 조용히 무시 (catch에서 setState 안 함). 뱃지가 안 뜨는 건 치명적이지
    *   않고, 피드 화면 자체 동작에 영향 없음.
-   * - 진행 중 요청은 페이지 이탈/탭 전환 시 abort.
+   * - 진행 중 요청은 페이지 이탈 시 abort.
    */
   useEffect(() => {
     let activeController: AbortController | null = null
@@ -271,7 +237,7 @@ export default function HomeFeedPage() {
   }, [])
 
   /**
-   * 다음 페이지를 추가 로딩한다. activeTab에 따라 팔로잉/추천 API를 분기 호출.
+   * 다음 페이지를 추가 로딩한다.
    *
    * `stateRef`에서 최신 상태를 읽어 stale closure 회피. sentinel observer와
    * retry 버튼이 공유 호출하므로 useCallback으로 안정화.
@@ -279,7 +245,6 @@ export default function HomeFeedPage() {
   const fetchMore = useCallback(async () => {
     const s = stateRef.current
     if (s.isLoadingMore || s.isLoading || !s.hasNext) return
-    const tab = s.activeTab
 
     moreControllerRef.current?.abort()
     const controller = new AbortController()
@@ -288,48 +253,28 @@ export default function HomeFeedPage() {
     setIsLoadingMore(true)
     setLoadMoreError(null)
     try {
-      if (tab === 'following') {
-        const response = await getFollowingFeed({
-          cursor: s.nextCursor,
-          signal: controller.signal,
-        })
-        if (controller.signal.aborted) return
-        if (stateRef.current.activeTab !== tab) return
-        // 중복 제거: 페이지 경계에서 동일 리뷰가 재등장하면 key 충돌·카드 중복이 생기므로
-        // 기존 id Set으로 필터링해 append한다(BookReviewsListPage/BookSearchPage 패턴과 통일).
-        const mapped = response.content.map(toReviewCardData)
-        setItems(prev => {
-          const existingIds = new Set(prev.map(item => item.id))
-          const deduped = mapped.filter(item => !existingIds.has(item.id))
-          return deduped.length > 0 ? [...prev, ...deduped] : prev
-        })
-        const hasNewItems = response.content.length > 0
-        if (hasNewItems) setNextCursor(response.nextCursor)
-        setHasNext(hasNewItems && response.hasNext)
-      } else {
-        const response = await getRecommendFeed({
-          cursorLike: s.nextCursorLike,
-          cursorId: s.nextCursorId,
-          signal: controller.signal,
-        })
-        if (controller.signal.aborted) return
-        if (stateRef.current.activeTab !== tab) return
-        const mapped = response.content.map(recommendToCard)
-        setItems(prev => {
-          const existingIds = new Set(prev.map(item => item.id))
-          const deduped = mapped.filter(item => !existingIds.has(item.id))
-          return deduped.length > 0 ? [...prev, ...deduped] : prev
-        })
-        const hasNewItems = response.content.length > 0
-        if (hasNewItems) {
-          setNextCursorId(response.nextCursorId)
-          setNextCursorLike(response.nextCursorLike)
-        }
-        setHasNext(hasNewItems && response.hasNext)
+      const response = await getFeed({
+        cursorCreatedAt: s.nextCursorCreatedAt,
+        cursorId: s.nextCursorId,
+        signal: controller.signal,
+      })
+      if (controller.signal.aborted) return
+      // 중복 제거: 페이지 경계에서 동일 리뷰가 재등장하면 key 충돌·카드 중복이 생기므로
+      // 기존 id Set으로 필터링해 append한다(BookReviewsListPage/BookSearchPage 패턴과 통일).
+      const mapped = response.content.map(toReviewCardData)
+      setItems(prev => {
+        const existingIds = new Set(prev.map(item => item.id))
+        const deduped = mapped.filter(item => !existingIds.has(item.id))
+        return deduped.length > 0 ? [...prev, ...deduped] : prev
+      })
+      const hasNewItems = response.content.length > 0
+      if (hasNewItems) {
+        setNextCursorCreatedAt(response.nextCursorCreatedAt)
+        setNextCursorId(response.nextCursorId)
       }
+      setHasNext(hasNewItems && response.hasNext)
     } catch (error) {
       if (axios.isCancel(error) || controller.signal.aborted) return
-      if (stateRef.current.activeTab !== tab) return
       setLoadMoreError(error instanceof Error ? error.message : '추가 로딩에 실패했습니다.')
     } finally {
       if (!controller.signal.aborted) setIsLoadingMore(false)
@@ -408,7 +353,7 @@ export default function HomeFeedPage() {
             aria-label={unreadCount > 0 ? `알림 (미읽음 ${unreadCount}개)` : '알림'}
             className="relative flex w-10 items-center justify-center rounded-full p-2 transition-colors hover:bg-primary/5"
           >
-            <span className="material-symbols-outlined text-primary">notifications</span>
+            <Icon name="notifications" className="text-primary" />
             {unreadCount > 0 && (
               <span
                 aria-hidden="true"
@@ -419,54 +364,35 @@ export default function HomeFeedPage() {
             )}
           </Link>
         </div>
-        {/* Tabs */}
-        <div className="flex gap-8 px-4" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'following'}
-            onClick={() => {
-              setActiveTab('following')
-              useFeedStore.setState({ activeTab: 'following' })
-            }}
-            className="relative flex flex-col items-center py-3"
-          >
-            <span
-              className={cn(
-                'text-sm font-bold',
-                activeTab === 'following' ? 'text-primary' : 'text-muted-foreground'
-              )}
-            >
-              팔로잉
-            </span>
-            {activeTab === 'following' && (
-              <div className="absolute bottom-0 h-0.5 w-full rounded-full bg-primary" />
-            )}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'recommend'}
-            onClick={() => {
-              setActiveTab('recommend')
-              useFeedStore.setState({ activeTab: 'recommend' })
-            }}
-            className="relative flex flex-col items-center py-3"
-          >
-            <span
-              className={cn(
-                'text-sm font-bold',
-                activeTab === 'recommend' ? 'text-primary' : 'text-muted-foreground'
-              )}
-            >
-              추천
-            </span>
-            {activeTab === 'recommend' && (
-              <div className="absolute bottom-0 h-0.5 w-full rounded-full bg-primary" />
-            )}
-          </button>
-        </div>
       </header>
+
+      {/* 당겨서 새로고침 인디케이터 — 당긴 만큼 높이가 늘어나고, 손을 떼면 접힌다 */}
+      <div
+        aria-hidden={pullDistance === 0}
+        style={{ height: pullDistance }}
+        className="flex items-end justify-center overflow-hidden transition-[height] duration-200"
+      >
+        {pullDistance > 0 && (
+          <div className="flex flex-col items-center gap-1 pb-2 text-primary">
+            <Icon
+              name={isRefreshing ? 'progress_activity' : 'arrow_downward'}
+              className={cn(
+                'text-[22px]',
+                isRefreshing && 'animate-spin',
+                !isRefreshing && willRefresh && 'rotate-180'
+              )}
+              style={{ transition: 'transform 200ms' }}
+            />
+            <span className="text-[11px] font-semibold">
+              {isRefreshing
+                ? '새로고침 중...'
+                : willRefresh
+                  ? '놓으면 새로고침'
+                  : '당겨서 새로고침'}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Feed */}
       <main className="flex-1 overflow-y-auto pb-24">
@@ -487,21 +413,11 @@ export default function HomeFeedPage() {
         )}
 
         {!isLoading && !errorMessage && items.length === 0 && (
-          <EmptyState
-            icon={activeTab === 'following' ? 'group' : 'auto_awesome'}
-            message={
-              activeTab === 'following'
-                ? '팔로우한 사용자의 감상이 아직 없어요.'
-                : '추천 감상이 아직 없어요.'
-            }
-          />
+          <EmptyState icon="auto_stories" message="아직 볼 수 있는 감상이 없어요." />
         )}
 
         {items.map(memo => (
-          <div
-            key={`${activeTab}-${memo.id}`}
-            className="p-4 pt-4 first:pt-4 [&:not(:first-child)]:pt-0"
-          >
+          <div key={memo.id} className="p-4 pt-4 first:pt-4 [&:not(:first-child)]:pt-0">
             <ReviewCard review={memo} />
           </div>
         ))}

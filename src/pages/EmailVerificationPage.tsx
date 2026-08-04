@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { verifyEmail, resendEmailCode } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { isCarouselSeen } from '@/lib/onboarding'
+import Icon from '@/components/common/Icon'
 
 // 진입 경로별로 EmailVerificationPage가 다른 탈출 UI를 노출하기 위한 식별자.
 // sender(SignupPage/SettingsPage)와 receiver(이 파일)가 동일한 union을 공유해 오타 시 컴파일 단계에서 차단.
@@ -31,7 +32,7 @@ export default function EmailVerificationPage() {
   if (!email) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
-        <span className="material-symbols-outlined text-5xl text-destructive">error</span>
+        <Icon name="error" className="text-5xl text-destructive" />
         <p className="mt-4 text-center text-lg font-medium text-foreground">
           이메일 정보를 찾을 수 없습니다.
         </p>
@@ -143,7 +144,7 @@ export default function EmailVerificationPage() {
               aria-label="이전 페이지로 돌아가기"
               className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <Icon name="arrow_back" />
             </button>
           )}
         </div>
@@ -164,7 +165,7 @@ export default function EmailVerificationPage() {
       </header>
 
       <main className="flex flex-1 flex-col items-center px-6 pt-16">
-        <span className="material-symbols-outlined text-6xl text-primary">mail</span>
+        <Icon name="mail" className="text-6xl text-primary" />
 
         <h2 className="mt-6 text-2xl font-bold text-foreground">인증 메일을 보냈어요</h2>
 

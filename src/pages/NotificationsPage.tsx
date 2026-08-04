@@ -12,6 +12,7 @@ import {
 import BottomNav from '@/components/layout/BottomNav'
 import { Avatar } from '@/components/common/Avatar'
 import { EmptyState } from '@/components/common/EmptyState'
+import Icon, { type IconName } from '@/components/common/Icon'
 
 type TabValue = 'all' | 'unread'
 
@@ -21,7 +22,7 @@ type TabValue = 'all' | 'unread'
  * `REVIEW_LIKE`/`COMMENT_LIKE`는 시각적으로 동일하게 좋아요(빨강 하트)로 표시한다.
  * `SYSTEM`은 actor가 없으므로 회색 톤으로 처리.
  */
-const typeIcon: Record<NotificationType, { icon: string; bg: string }> = {
+const typeIcon: Record<NotificationType, { icon: IconName; bg: string }> = {
   REVIEW_LIKE: { icon: 'favorite', bg: 'bg-red-500' },
   COMMENT: { icon: 'chat_bubble', bg: 'bg-blue-500' },
   COMMENT_LIKE: { icon: 'favorite', bg: 'bg-red-500' },
@@ -285,7 +286,7 @@ export default function NotificationsPage() {
             onClick={() => navigate(-1)}
             className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
           >
-            <span className="material-symbols-outlined">arrow_back</span>
+            <Icon name="arrow_back" />
           </button>
           <h1 className="text-xl font-bold tracking-tight text-primary">알림</h1>
           <div className="w-10" />
@@ -481,15 +482,11 @@ function NotificationRow({
             icon.bg
           )}
         >
-          <span
-            className={cn(
-              'material-symbols-outlined text-[12px]',
-              (notification.type === 'REVIEW_LIKE' || notification.type === 'COMMENT_LIKE') &&
-                'fill-icon'
-            )}
-          >
-            {icon.icon}
-          </span>
+          <Icon
+            name={icon.icon}
+            className="text-[12px]"
+            filled={notification.type === 'REVIEW_LIKE' || notification.type === 'COMMENT_LIKE'}
+          />
         </div>
       </div>
 

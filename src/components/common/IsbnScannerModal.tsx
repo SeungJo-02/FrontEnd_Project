@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { createBarcodeDecoder } from '@/lib/barcodeDecoder'
 import { isMobile } from '@/lib/device'
+import Icon from '@/components/common/Icon'
 
 const DEVICE_ID_KEY = 'shelfeed-scan-device-id'
 const SCAN_INTERVAL = 120
@@ -17,6 +18,7 @@ type ScannerStatus =
   | 'no-camera'
   | 'in-use'
   | 'unsupported'
+  | 'insecure-context'
   | 'error'
 
 interface IsbnScannerModalProps {
@@ -35,6 +37,8 @@ const STATUS_MESSAGES: Record<
   'no-camera': '이 기기에 사용할 수 있는 카메라가 없습니다.',
   'in-use': '다른 앱이 카메라를 사용 중입니다. 종료 후 다시 시도해주세요.',
   unsupported: '이 브라우저는 카메라 스캔을 지원하지 않습니다.',
+  'insecure-context':
+    '보안 연결(HTTPS)에서만 카메라를 사용할 수 있습니다. http:// 주소 대신 https:// 주소로 접속해주세요.',
   error: '카메라를 시작하지 못했습니다. 잠시 후 다시 시도해주세요.',
 }
 
@@ -178,6 +182,13 @@ export default function IsbnScannerModal({
       const isStale = () => sessionRef.current !== mySession
 
       try {
+        // getUserMedia는 보안 컨텍스트(HTTPS / localhost)에서만 노출된다. 폰에서 개발 서버를
+        // http://192.168.x.x 로 열면 navigator.mediaDevices 자체가 undefined가 되는데, 이때
+        // '브라우저 미지원'으로 안내하면 원인을 영영 못 찾는다. 두 경우를 갈라서 알려준다.
+        if (typeof window !== 'undefined' && window.isSecureContext === false) {
+          setStatus('insecure-context')
+          return
+        }
         if (!navigator.mediaDevices?.getUserMedia) {
           setStatus('unsupported')
           return
@@ -457,7 +468,7 @@ export default function IsbnScannerModal({
           aria-label="스캐너 닫기"
           className="flex size-10 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
         >
-          <span className="material-symbols-outlined">close</span>
+          <Icon name="close" />
         </button>
         <h2 className="flex-1 text-center text-base font-bold">ISBN 바코드 스캔</h2>
         <div className="flex items-center gap-2">
@@ -471,9 +482,7 @@ export default function IsbnScannerModal({
                 torchOn ? 'bg-yellow-500/30 text-yellow-300' : 'text-white hover:bg-white/10'
               }`}
             >
-              <span className="material-symbols-outlined">
-                {torchOn ? 'flashlight_on' : 'flashlight_off'}
-              </span>
+              <Icon name={torchOn ? 'flashlight_on' : 'flashlight_off'} />
             </button>
           )}
           {showDeviceSelect ? (
@@ -527,9 +536,7 @@ export default function IsbnScannerModal({
               {currentTip ? (
                 <div className="mt-4 animate-[tip-fade-in_0.3s_ease-out] text-center">
                   <div className="mb-1 flex items-center justify-center gap-1.5">
-                    <span className="material-symbols-outlined text-base text-amber-400">
-                      {currentTip.icon}
-                    </span>
+                    <Icon name={currentTip.icon} className="text-base text-amber-400" />
                     <p className="text-sm font-medium text-amber-300">{currentTip.text}</p>
                   </div>
                   {tipIndex >= 2 && (
@@ -563,7 +570,7 @@ export default function IsbnScannerModal({
 
         {errorMessage && (
           <div className="absolute inset-x-0 top-1/2 mx-6 -translate-y-1/2 rounded-2xl bg-white/95 p-6 text-center text-foreground">
-            <span className="material-symbols-outlined mb-2 text-4xl text-destructive">error</span>
+            <Icon name="error" className="mb-2 text-4xl text-destructive" />
             <p role="alert" className="mb-4 text-sm font-medium">
               {errorMessage}
             </p>

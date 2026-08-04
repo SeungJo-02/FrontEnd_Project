@@ -14,6 +14,7 @@ import {
 } from '@/api/comment'
 import ReportDialog from '@/components/common/ReportDialog'
 import { Avatar } from '@/components/common/Avatar'
+import Icon from '@/components/common/Icon'
 
 interface CommentSectionProps {
   reviewId: number
@@ -21,18 +22,24 @@ interface CommentSectionProps {
   initialCommentCount: number
   /** 댓글 수 변경 시 부모에 알림 (리액션 섹션의 카운트 동기화용). */
   onCommentCountChange?: (count: number) => void
+  /**
+   * `page`는 문서 흐름에 그대로 쌓이는 기존 레이아웃,
+   * `sheet`는 바텀시트 안에서 목록만 스크롤되고 입력창이 하단에 고정되는 레이아웃.
+   */
+  variant?: 'page' | 'sheet'
 }
 
 /**
- * 감상 상세 하단의 댓글 영역. 목록 조회 + 무한 스크롤 + 작성 + 수정 + 삭제 + 좋아요를 한 곳에서 처리.
+ * 감상의 댓글 영역. 목록 조회 + 무한 스크롤 + 작성 + 수정 + 삭제 + 좋아요를 한 곳에서 처리.
  *
- * ReviewDetailPage에서 `reviewId`와 `initialCommentCount`만 받아 독립적으로 동작한다.
+ * 호출부에서 `reviewId`와 `initialCommentCount`만 받아 독립적으로 동작한다.
  * 댓글 상태(목록/커서/로딩)를 부모에 노출하지 않아 ReviewDetailPage의 복잡도를 올리지 않는다.
  */
 export default function CommentSection({
   reviewId,
   initialCommentCount,
   onCommentCountChange,
+  variant = 'page',
 }: CommentSectionProps) {
   const [comments, setComments] = useState<CommentItem[]>([])
   const [nextCursor, setNextCursor] = useState<number | null>(null)
@@ -61,7 +68,11 @@ export default function CommentSection({
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [reportTargetId, setReportTargetId] = useState<number | null>(null)
 
+  const isSheet = variant === 'sheet'
+
   const inputRef = useRef<HTMLInputElement>(null)
+  // 시트 모드에서 실제로 스크롤되는 컨테이너. IntersectionObserver의 root로 넘긴다.
+  const scrollRootRef = useRef<HTMLDivElement>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const moreControllerRef = useRef<AbortController | null>(null)
   // 댓글 좋아요 연타(in-flight) 가드 — BookReviewsListPage 패턴과 동일
@@ -139,11 +150,13 @@ export default function CommentSection({
           if (stateRef.current.loadMoreError) return
           fetchMore()
         },
-        { rootMargin: '200px' }
+        // 시트 모드에서는 뷰포트가 아니라 시트 내부 컨테이너가 스크롤러다. root를 넘기지
+        // 않으면 rootMargin 200px 선반영이 무시돼 목록 끝에서 눈에 띄게 멈칫한다.
+        { root: isSheet ? scrollRootRef.current : null, rootMargin: '200px' }
       )
       observerRef.current.observe(node)
     },
-    [fetchMore]
+    [fetchMore, isSheet]
   )
 
   useEffect(() => () => observerRef.current?.disconnect(), [])
@@ -337,94 +350,96 @@ export default function CommentSection({
     setEditContent('')
   }
 
-  return (
-    <>
-      {/* 댓글 목록 */}
-      <section className="px-5 pb-6 pt-2">
-        <h3 className="mb-4 text-lg font-bold">댓글 {commentCount}개</h3>
+  const commentList = (
+    <section className={cn('px-5 pt-2', isSheet ? 'pb-4' : 'pb-6')}>
+      {/* 시트 모드에선 시트 헤더가 이미 "댓글 N개"를 보여주므로 제목을 중복 렌더하지 않는다 */}
+      {!isSheet && <h3 className="mb-4 text-lg font-bold">댓글 {commentCount}개</h3>}
 
-        {isLoading && (
-          <p
-            role="status"
-            aria-busy="true"
-            className="py-6 text-center text-sm text-muted-foreground"
+      {isLoading && (
+        <p
+          role="status"
+          aria-busy="true"
+          className="py-6 text-center text-sm text-muted-foreground"
+        >
+          불러오는 중...
+        </p>
+      )}
+
+      {!isLoading && errorMessage && (
+        <p role="alert" className="py-6 text-center text-sm text-destructive">
+          {errorMessage}
+        </p>
+      )}
+
+      {!isLoading && !errorMessage && comments.length === 0 && (
+        <div className="rounded-xl bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+          아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
+        </div>
+      )}
+
+      {comments.length > 0 && (
+        <div className="space-y-1">
+          {comments.map(comment => (
+            <div key={comment.commentId}>
+              <CommentRow
+                comment={comment}
+                parentCommentId={null}
+                deletingId={deletingId}
+                onReply={startReply}
+                onEdit={startEdit}
+                onDelete={handleDelete}
+                onToggleLike={handleToggleLike}
+                onReport={id => setReportTargetId(id)}
+              />
+              {comment.replies.length > 0 && (
+                <div className="ml-10 border-l-2 border-primary/10 pl-3">
+                  {comment.replies.map(reply => (
+                    <CommentRow
+                      key={reply.commentId}
+                      comment={reply}
+                      parentCommentId={comment.commentId}
+                      deletingId={deletingId}
+                      onEdit={startEdit}
+                      onDelete={handleDelete}
+                      onToggleLike={handleToggleLike}
+                      onReport={id => setReportTargetId(id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {hasNext && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
+
+      {isLoadingMore && (
+        <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
+      )}
+
+      {loadMoreError && !isLoadingMore && (
+        <div className="flex flex-col items-center gap-2 py-4">
+          <p role="alert" className="text-sm text-destructive">
+            {loadMoreError}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoadMoreError(null)
+              fetchMore()
+            }}
+            className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
           >
-            불러오는 중...
-          </p>
-        )}
+            다시 불러오기
+          </button>
+        </div>
+      )}
+    </section>
+  )
 
-        {!isLoading && errorMessage && (
-          <p role="alert" className="py-6 text-center text-sm text-destructive">
-            {errorMessage}
-          </p>
-        )}
-
-        {!isLoading && !errorMessage && comments.length === 0 && (
-          <div className="rounded-xl bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-            아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
-          </div>
-        )}
-
-        {comments.length > 0 && (
-          <div className="space-y-1">
-            {comments.map(comment => (
-              <div key={comment.commentId}>
-                <CommentRow
-                  comment={comment}
-                  parentCommentId={null}
-                  deletingId={deletingId}
-                  onReply={startReply}
-                  onEdit={startEdit}
-                  onDelete={handleDelete}
-                  onToggleLike={handleToggleLike}
-                  onReport={id => setReportTargetId(id)}
-                />
-                {comment.replies.length > 0 && (
-                  <div className="ml-10 border-l-2 border-primary/10 pl-3">
-                    {comment.replies.map(reply => (
-                      <CommentRow
-                        key={reply.commentId}
-                        comment={reply}
-                        parentCommentId={comment.commentId}
-                        deletingId={deletingId}
-                        onEdit={startEdit}
-                        onDelete={handleDelete}
-                        onToggleLike={handleToggleLike}
-                        onReport={id => setReportTargetId(id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {hasNext && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
-
-        {isLoadingMore && (
-          <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
-        )}
-
-        {loadMoreError && !isLoadingMore && (
-          <div className="flex flex-col items-center gap-2 py-4">
-            <p role="alert" className="text-sm text-destructive">
-              {loadMoreError}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setLoadMoreError(null)
-                fetchMore()
-              }}
-              className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
-            >
-              다시 불러오기
-            </button>
-          </div>
-        )}
-      </section>
-
+  const composer = (
+    <>
       {/* 수정 모드 인라인 에디터 */}
       {editTarget && (
         <section className="border-t border-border px-5 py-3">
@@ -508,6 +523,24 @@ export default function CommentSection({
           )}
         </section>
       )}
+    </>
+  )
+
+  return (
+    <>
+      {isSheet ? (
+        <>
+          <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto">
+            {commentList}
+          </div>
+          <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">{composer}</div>
+        </>
+      ) : (
+        <>
+          {commentList}
+          {composer}
+        </>
+      )}
 
       {reportTargetId != null && (
         <ReportDialog
@@ -580,9 +613,7 @@ function CommentRow({
               />
             ) : (
               <div className="flex size-full items-center justify-center">
-                <span className="material-symbols-outlined text-[16px] text-primary/40">
-                  person
-                </span>
+                <Icon name="person" className="text-[16px] text-primary/40" />
               </div>
             )}
           </button>
@@ -632,18 +663,13 @@ function CommentRow({
                   comment.isLiked ? 'text-red-500' : 'hover:text-foreground'
                 )}
               >
-                <span
-                  className="material-symbols-outlined text-[14px]"
-                  style={{ fontVariationSettings: `'FILL' ${comment.isLiked ? 1 : 0}` }}
-                >
-                  favorite
-                </span>
+                <Icon name="favorite" className="text-[14px]" filled={comment.isLiked} />
                 {comment.likeCount > 0 && <span>{comment.likeCount}</span>}
               </button>
             )}
             {comment.isMine && comment.likeCount > 0 && (
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">favorite</span>
+                <Icon name="favorite" className="text-[14px]" />
                 {comment.likeCount}
               </span>
             )}

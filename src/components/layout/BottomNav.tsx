@@ -1,7 +1,8 @@
 import { useLocation, Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import Icon, { type IconName } from '@/components/common/Icon'
 
-const navItems = [
+const navItems: { label: string; icon: IconName; path: string }[] = [
   { label: '홈', icon: 'home', path: '/' },
   { label: '검색', icon: 'search', path: '/search' },
   { label: '내 서재', icon: 'menu_book', path: '/library' },
@@ -26,9 +27,7 @@ export default function BottomNav() {
                 isActive ? 'text-primary' : 'text-muted-foreground'
               )}
             >
-              <span className={cn('material-symbols-outlined text-2xl', isActive && 'fill-icon')}>
-                {item.icon}
-              </span>
+              <Icon name={item.icon} className="text-2xl" filled={isActive} />
               <span className="text-[10px] font-bold">{item.label}</span>
             </Link>
           )

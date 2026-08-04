@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 import axios from 'axios'
 import { getBook, type BookDetail } from '@/api/book'
 import { createReview, getReviewDetail, updateReview, type ReviewStatus } from '@/api/review'
@@ -9,9 +10,20 @@ import BottomNav from '@/components/layout/BottomNav'
 import OcrInputMethodSheet from '@/components/ocr/OcrInputMethodSheet'
 import OcrTextSelector from '@/components/ocr/OcrTextSelector'
 import { useAuthStore } from '@/store/authStore'
+import Icon from '@/components/common/Icon'
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 const MAX_QUOTE_LENGTH = 200
+const MAX_TAGS = 5
+const MAX_TAG_LENGTH = 15
+
+/**
+ * 입력값을 태그 한 개로 다듬는다. 앞에 붙인 `#`과 공백을 걷어내고, 태그 안의 연속 공백은
+ * 하나로 줄인다. 다듬은 결과가 비면 태그로 인정하지 않는다(빈 문자열 반환).
+ */
+function normalizeTag(raw: string): string {
+  return raw.trim().replace(/^#+/, '').replace(/\s+/g, ' ').trim()
+}
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -42,6 +54,11 @@ export default function WriteReviewPage() {
   // 피드의 ReviewCard에서 hasSpoiler 블러 처리가 동작하지 않아 다른 사용자에게 결말이 새는
   // 도메인 정책 위반이 발생했다. 사용자가 명시적으로 토글로 표시하도록 state로 받음.
   const [isSpoiler, setIsSpoiler] = useState(false)
+  // 감상에 붙일 태그. 예전에는 태그를 아예 입력할 수 없어서 상세 화면이 저자·출판사를
+  // 태그처럼 지어내 보여줬다. 이제 작성자가 직접 고른 태그만 저장·노출한다.
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const [tagErrorMessage, setTagErrorMessage] = useState<string | null>(null)
   const [isOcrLoading, setIsOcrLoading] = useState(false)
   const [isOcrSheetOpen, setIsOcrSheetOpen] = useState(false)
   const [ocrResult, setOcrResult] = useState<{ imageSrc: string; fields: OcrTextField[] } | null>(
@@ -92,6 +109,7 @@ export default function WriteReviewPage() {
           setQuoteText(result.quote ?? '')
           setIsQuoteEditorOpen(Boolean(result.quote))
           setIsSpoiler(result.isSpoiler)
+          setTags(result.tags ?? [])
         } catch (error) {
           if (axios.isCancel(error)) return
           setLoadErrorMessage(
@@ -202,6 +220,40 @@ export default function WriteReviewPage() {
   }
 
   /**
+   * 입력창의 내용을 태그로 확정한다. Enter 키와 "추가" 버튼이 공유한다.
+   *
+   * 개수·길이 초과는 이유를 알려주고 막지만, 이미 붙인 태그를 다시 입력한 경우는
+   * 에러가 아니라 입력창만 비운다 — 결과(그 태그가 붙어 있음)가 사용자 의도와 같기 때문.
+   */
+  const commitTag = () => {
+    const normalized = normalizeTag(tagInput)
+    if (!normalized) return
+
+    if (tags.includes(normalized)) {
+      setTagInput('')
+      setTagErrorMessage(null)
+      return
+    }
+    if (tags.length >= MAX_TAGS) {
+      setTagErrorMessage(`태그는 최대 ${MAX_TAGS}개까지 추가할 수 있어요.`)
+      return
+    }
+    if (normalized.length > MAX_TAG_LENGTH) {
+      setTagErrorMessage(`태그는 ${MAX_TAG_LENGTH}자를 넘을 수 없어요.`)
+      return
+    }
+
+    setTags(prev => [...prev, normalized])
+    setTagInput('')
+    setTagErrorMessage(null)
+  }
+
+  const removeTag = (target: string) => {
+    setTags(prev => prev.filter(tag => tag !== target))
+    setTagErrorMessage(null)
+  }
+
+  /**
    * 감상을 제출한다. `reviewStatus`에 따라 임시저장('DRAFT')과 발행('PUBLISHED')을 겸한다.
    * - 임시저장: 저장 후 임시저장 목록(`/drafts`)으로 이동
    * - 발행: 작성이면 상세로, 수정이면 해당 감상 상세로 이동
@@ -227,6 +279,14 @@ export default function WriteReviewPage() {
     setSubmittingStatus(reviewStatus)
     setSubmitErrorMessage(null)
     try {
+      // 입력창에 쓰다 만 태그도 살려서 보낸다 — Enter를 누르지 않았다고 조용히 버리면
+      // 사용자는 태그를 붙였다고 생각한 채 게시하게 된다.
+      const pendingTag = normalizeTag(tagInput)
+      const submittedTags =
+        pendingTag && !tags.includes(pendingTag) && tags.length < MAX_TAGS
+          ? [...tags, pendingTag.slice(0, MAX_TAG_LENGTH)]
+          : tags
+
       const basePayload = {
         content: trimmedContent,
         rating,
@@ -234,6 +294,7 @@ export default function WriteReviewPage() {
         isSpoiler,
         reviewVisibility: 'PUBLIC' as const,
         reviewStatus,
+        tags: submittedTags,
       }
 
       if (isEditMode) {
@@ -289,9 +350,7 @@ export default function WriteReviewPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <AppHeader title={isEditMode ? '감상 수정' : '감상 작성'} showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 px-8 pb-24">
-          <span className="material-symbols-outlined text-6xl text-muted-foreground/30">
-            search_off
-          </span>
+          <Icon name="search_off" className="text-6xl text-muted-foreground/30" />
           <p className="text-lg font-bold text-muted-foreground">도서를 찾을 수 없습니다</p>
           <p role="alert" className="max-w-[280px] text-center text-sm text-muted-foreground">
             {loadErrorMessage ?? '도서 정보를 불러올 수 없습니다.'}
@@ -311,7 +370,21 @@ export default function WriteReviewPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <AppHeader title={isEditMode ? '감상 수정' : '감상 작성'} showBack />
+      <AppHeader
+        title={isEditMode ? '감상 수정' : '감상 작성'}
+        showBack
+        rightAction={
+          <button
+            type="button"
+            onClick={() => handleSubmit('PUBLISHED')}
+            disabled={submittingStatus !== null}
+            aria-label={isEditMode ? '수정하기' : '게시하기'}
+            className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+          >
+            <Icon name="check" />
+          </button>
+        }
+      />
 
       <main className="flex-1 overflow-y-auto pb-24">
         {/* Book Info */}
@@ -328,9 +401,7 @@ export default function WriteReviewPage() {
                   />
                 ) : (
                   <div className="flex size-full items-center justify-center">
-                    <span className="material-symbols-outlined text-3xl text-muted-foreground/30">
-                      menu_book
-                    </span>
+                    <Icon name="menu_book" className="text-3xl text-muted-foreground/30" />
                   </div>
                 )}
               </div>
@@ -359,28 +430,53 @@ export default function WriteReviewPage() {
                   className="transition-transform active:scale-90"
                   aria-label={`${value}점`}
                 >
-                  <span
-                    className={`material-symbols-outlined text-[40px] ${
-                      value <= rating ? 'fill-1 text-primary' : 'text-primary/25'
-                    }`}
-                    style={{ fontVariationSettings: `'FILL' ${value <= rating ? 1 : 0}` }}
-                  >
-                    star
-                  </span>
+                  <Icon
+                    name="star"
+                    filled={value <= rating}
+                    className={cn(
+                      'text-[40px]',
+                      value <= rating ? 'text-primary' : 'text-primary/25'
+                    )}
+                  />
                 </button>
               ))}
             </div>
           </div>
         </section>
 
+        {/* 입력 보조 — 인용구 직접 입력 / 사진 속 문장 추출 */}
+        <section className="grid grid-cols-2 gap-3 px-6 pb-1 pt-4">
+          <button
+            type="button"
+            onClick={() => setIsQuoteEditorOpen(true)}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-sm font-bold shadow-sm transition-colors hover:bg-primary/5"
+          >
+            <Icon name="format_quote" className="text-[20px]" />
+            인용구 추가
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsOcrSheetOpen(true)}
+            disabled={isOcrLoading}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-sm font-bold shadow-sm transition-colors hover:bg-primary/5 disabled:opacity-60"
+          >
+            <Icon name="text_fields" className="text-[20px]" />
+            {isOcrLoading ? '추출 중...' : '텍스트 추출'}
+          </button>
+        </section>
+
         {/* Review Text */}
-        <section className="px-8 py-4">
+        <section className="px-6 py-4">
+          <label htmlFor="review-content" className="mb-2 block text-base font-bold">
+            감상
+          </label>
           <textarea
+            id="review-content"
             value={reviewText}
             onChange={e => setReviewText(e.target.value)}
             maxLength={500}
             placeholder="이 책에 대한 감상을 자유롭게 적어보세요...."
-            className="min-h-[260px] w-full resize-none bg-transparent text-lg leading-relaxed outline-none placeholder:text-muted-foreground/40"
+            className="min-h-[300px] w-full resize-none rounded-2xl border-none bg-card px-5 py-4 text-[15px] leading-7 shadow-sm outline-none transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
           />
         </section>
 
@@ -397,7 +493,7 @@ export default function WriteReviewPage() {
                 aria-label="인용구 닫기"
                 className="absolute right-3 top-3 flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
               >
-                <span className="material-symbols-outlined text-[18px]">close</span>
+                <Icon name="close" className="text-[18px]" />
               </button>
               <div className="border-l-4 border-primary pl-4">
                 <textarea
@@ -415,7 +511,7 @@ export default function WriteReviewPage() {
                   disabled={isOcrLoading}
                   className="flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80 disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+                  <Icon name="photo_camera" className="text-[18px]" />
                   {isOcrLoading ? '인식 중...' : '사진으로 입력'}
                 </button>
                 <span className="text-xs text-muted-foreground">{quoteText.length}/200</span>
@@ -424,30 +520,9 @@ export default function WriteReviewPage() {
           </section>
         )}
 
-        {/* Quote Add Button + Spoiler Toggle */}
-        <section className="flex items-center justify-between gap-2 px-6 py-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsQuoteEditorOpen(true)}
-              className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-bold text-primary transition-colors hover:text-primary/80"
-            >
-              <span className="material-symbols-outlined text-[18px]">format_quote</span>
-              인용구 추가
-            </button>
-            {!isQuoteEditorOpen && (
-              <button
-                type="button"
-                onClick={() => setIsOcrSheetOpen(true)}
-                disabled={isOcrLoading}
-                className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-bold text-primary transition-colors hover:text-primary/80 disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-[18px]">photo_camera</span>
-                {isOcrLoading ? '인식 중...' : '사진으로 입력'}
-              </button>
-            )}
-          </div>
-          <label className="flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-muted-foreground select-none">
+        {/* Spoiler Toggle — 인용구/텍스트 추출 진입은 본문 위 버튼 행으로 옮겼다 */}
+        <section className="flex items-center justify-end gap-2 px-6 py-3">
+          <label className="flex shrink-0 cursor-pointer select-none items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-muted-foreground">
             <input
               type="checkbox"
               checked={isSpoiler}
@@ -456,6 +531,83 @@ export default function WriteReviewPage() {
             />
             스포일러 포함
           </label>
+        </section>
+
+        {/* Tags */}
+        <section className="px-8 py-3">
+          <div className="mb-2 flex items-baseline justify-between">
+            <label htmlFor="tag-input" className="text-sm font-bold text-foreground">
+              태그
+            </label>
+            <span className="text-xs text-muted-foreground">
+              {tags.length}/{MAX_TAGS}
+            </span>
+          </div>
+
+          {tags.length > 0 && (
+            <ul className="mb-2 flex flex-wrap gap-2">
+              {tags.map(tag => (
+                <li key={tag}>
+                  <span className="flex items-center gap-1 rounded-xl bg-primary/10 py-1.5 pl-3 pr-1.5 text-sm font-semibold text-primary/80">
+                    #{tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      aria-label={`${tag} 태그 삭제`}
+                      className="flex size-5 items-center justify-center rounded-full transition-colors hover:bg-primary/20"
+                    >
+                      <Icon name="close" className="text-[16px]" />
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex items-center gap-2">
+            <input
+              id="tag-input"
+              type="text"
+              value={tagInput}
+              onChange={e => {
+                setTagInput(e.target.value)
+                if (tagErrorMessage) setTagErrorMessage(null)
+              }}
+              onKeyDown={e => {
+                // Enter는 태그 확정 전용. 폼 제출로 새지 않도록 기본 동작을 막는다.
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  commitTag()
+                }
+              }}
+              maxLength={MAX_TAG_LENGTH}
+              disabled={tags.length >= MAX_TAGS}
+              placeholder={
+                tags.length >= MAX_TAGS
+                  ? `태그는 최대 ${MAX_TAGS}개까지 추가할 수 있어요`
+                  : '예: 인생책, 위로가필요할때'
+              }
+              className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-transparent px-4 text-base outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={commitTag}
+              disabled={tags.length >= MAX_TAGS || normalizeTag(tagInput).length === 0}
+              className="h-11 shrink-0 rounded-xl bg-primary/10 px-4 text-sm font-bold text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              추가
+            </button>
+          </div>
+
+          {tagErrorMessage ? (
+            <p role="alert" className="mt-2 text-xs font-semibold text-destructive">
+              {tagErrorMessage}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-muted-foreground/70">
+              Enter를 누르거나 추가 버튼을 눌러 태그를 붙일 수 있어요.
+            </p>
+          )}
         </section>
 
         {/* Action Buttons */}
@@ -504,9 +656,7 @@ export default function WriteReviewPage() {
           className="fixed inset-0 z-50 mx-auto flex max-w-[430px] items-center justify-center bg-black/80"
         >
           <div className="flex flex-col items-center gap-4">
-            <span className="material-symbols-outlined animate-spin text-5xl text-white">
-              progress_activity
-            </span>
+            <Icon name="progress_activity" className="animate-spin text-5xl text-white" />
             <p className="text-lg font-bold text-white">텍스트 인식 중...</p>
             <button
               type="button"

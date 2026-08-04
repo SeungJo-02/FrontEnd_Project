@@ -7,6 +7,7 @@ import AppHeader from '@/components/layout/AppHeader'
 import { resetPassword } from '@/api/auth'
 import { PASSWORD_REGEX } from '@/constants/validation'
 import { FORM_INPUT_CLASS } from '@/constants/form'
+import Icon from '@/components/common/Icon'
 
 const schema = z
   .object({
@@ -51,7 +52,7 @@ export default function PasswordResetPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <AppHeader title="새 비밀번호 설정" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
-          <span className="material-symbols-outlined text-5xl text-destructive">error</span>
+          <Icon name="error" className="text-5xl text-destructive" />
           <p className="text-center text-lg font-medium text-foreground">
             유효하지 않은 링크입니다.
           </p>
@@ -91,7 +92,7 @@ export default function PasswordResetPage() {
       <main className="flex flex-1 flex-col px-6 pt-12">
         {isSuccess ? (
           <div className="flex flex-col items-center gap-4 pt-16 text-center">
-            <span className="material-symbols-outlined text-5xl text-primary">check_circle</span>
+            <Icon name="check_circle" className="text-5xl text-primary" />
             <h2 className="text-2xl font-bold text-foreground">비밀번호가 변경되었습니다</h2>
             <p className="text-base text-muted-foreground">새 비밀번호로 로그인해주세요.</p>
             <button

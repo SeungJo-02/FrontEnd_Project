@@ -1,42 +1,34 @@
 import { create } from 'zustand'
 import type { ReviewCardData } from '@/components/common/ReviewCard'
 
-export type FeedTab = 'following' | 'recommend'
-
-export interface FeedTabCache {
+export interface FeedCache {
   items: ReviewCardData[]
-  nextCursor: number | null
+  /** 다음 페이지 커서 — 마지막 항목의 작성 시각 */
+  nextCursorCreatedAt: string | null
+  /** 다음 페이지 커서 — 마지막 항목의 리뷰 ID */
   nextCursorId: number | null
-  nextCursorLike: number | null
   hasNext: boolean
   scrollY: number
 }
 
 interface FeedState {
-  activeTab: FeedTab
-  following: FeedTabCache | null
-  recommend: FeedTabCache | null
+  feed: FeedCache | null
 }
 
 /**
  * 홈 피드 데이터를 컴포넌트 unmount 이후에도 메모리에 보존하는 스토어.
  * persist 미들웨어 없이 in-memory로만 유지 — 새로고침 시 자연스럽게 초기화.
- * 탭별(팔로잉/추천) 독립 캐시 + 스크롤 위치를 저장한다.
+ *
+ * 팔로잉/추천이 하나의 피드로 합쳐지면서 탭별 캐시도 단일 캐시가 되었다.
  */
 export const useFeedStore = create<FeedState>()(() => ({
-  activeTab: 'following',
-  following: null,
-  recommend: null,
+  feed: null,
 }))
 
-export function setFeedTabCache(tab: FeedTab, cache: FeedTabCache) {
-  if (tab === 'following') {
-    useFeedStore.setState({ following: cache })
-  } else {
-    useFeedStore.setState({ recommend: cache })
-  }
+export function setFeedCache(cache: FeedCache) {
+  useFeedStore.setState({ feed: cache })
 }
 
 export function clearFeedCache() {
-  useFeedStore.setState({ following: null, recommend: null })
+  useFeedStore.setState({ feed: null })
 }

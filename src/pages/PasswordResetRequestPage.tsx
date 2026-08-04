@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import AppHeader from '@/components/layout/AppHeader'
 import { requestPasswordReset } from '@/api/auth'
 import { FORM_INPUT_CLASS } from '@/constants/form'
+import Icon from '@/components/common/Icon'
 
 const schema = z.object({
   email: z.string().email('올바른 이메일 형식을 입력해주세요'),
@@ -46,7 +47,7 @@ export default function PasswordResetRequestPage() {
       <main className="flex flex-1 flex-col px-6 pt-12">
         {isSent ? (
           <div className="flex flex-col items-center gap-4 pt-16 text-center">
-            <span className="material-symbols-outlined text-5xl text-primary">mark_email_read</span>
+            <Icon name="mark_email_read" className="text-5xl text-primary" />
             <h2 className="text-2xl font-bold text-foreground">메일을 보냈습니다</h2>
             <p className="text-base leading-relaxed text-muted-foreground">
               입력하신 이메일로 비밀번호 재설정 링크를

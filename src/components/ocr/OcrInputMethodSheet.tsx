@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { isMobile } from '@/lib/device'
 
 import WebcamCapture from './WebcamCapture'
+import Icon from '@/components/common/Icon'
 
 interface OcrInputMethodSheetProps {
   isOpen: boolean
@@ -113,7 +114,7 @@ export default function OcrInputMethodSheet({
             disabled={isLoading}
             className="flex items-center gap-4 rounded-xl border border-primary/10 p-4 text-left transition-colors hover:bg-primary/5 disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-2xl text-primary">photo_camera</span>
+            <Icon name="photo_camera" className="text-2xl text-primary" />
             <div>
               <p className="text-base font-bold text-foreground">카메라로 촬영</p>
               <p className="text-sm text-muted-foreground">
@@ -128,7 +129,7 @@ export default function OcrInputMethodSheet({
             disabled={isLoading}
             className="flex items-center gap-4 rounded-xl border border-primary/10 p-4 text-left transition-colors hover:bg-primary/5 disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-2xl text-primary">photo_library</span>
+            <Icon name="photo_library" className="text-2xl text-primary" />
             <div>
               <p className="text-base font-bold text-foreground">사진에서 선택</p>
               <p className="text-sm text-muted-foreground">

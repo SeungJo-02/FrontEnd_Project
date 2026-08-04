@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore'
 import { signup, checkEmail, checkNickname } from '@/api/auth'
 import { PASSWORD_REGEX } from '@/constants/validation'
 import type { EmailVerifyLocationState } from '@/pages/EmailVerificationPage'
+import Icon from '@/components/common/Icon'
 
 const step1Schema = z
   .object({
@@ -160,9 +161,7 @@ export default function SignupPage() {
           aria-label="뒤로 가기"
           className="flex size-12 shrink-0 items-center text-primary"
         >
-          <span className="material-symbols-outlined text-[24px]" aria-hidden="true">
-            arrow_back
-          </span>
+          <Icon name="arrow_back" className="text-[24px]" />
         </button>
         <h2 className="flex-1 pr-12 text-center text-lg font-bold leading-tight tracking-tight">
           {step === 1 ? '회원가입' : 'Shelfeed'}
@@ -230,9 +229,7 @@ export default function SignupPage() {
                     aria-pressed={showPassword}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground"
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true">
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
+                    <Icon name={showPassword ? 'visibility_off' : 'visibility'} />
                   </button>
                 </div>
                 {step1Form.formState.errors.password && (
@@ -283,10 +280,10 @@ export default function SignupPage() {
           <div className="flex flex-col items-center gap-6 p-6">
             <div className="group relative">
               <div className="flex size-32 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20 bg-primary/10 shadow-sm">
-                <span className="material-symbols-outlined text-4xl text-primary/40">person</span>
+                <Icon name="person" className="text-4xl text-primary/40" />
               </div>
               <div className="absolute bottom-0 right-0 rounded-full border-2 border-background bg-primary p-2 text-primary-foreground shadow-lg">
-                <span className="material-symbols-outlined text-sm">photo_camera</span>
+                <Icon name="photo_camera" className="text-sm" />
               </div>
             </div>
             <div className="space-y-2 text-center">
@@ -383,9 +380,7 @@ export default function SignupPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-primary-foreground shadow-md transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span>{isStep2Loading ? '가입 중...' : '시작하기'}</span>
-                {!isStep2Loading && (
-                  <span className="material-symbols-outlined">arrow_forward</span>
-                )}
+                {!isStep2Loading && <Icon name="arrow_forward" />}
               </button>
               <p className="mt-4 text-center text-sm text-muted-foreground">
                 나중에 언제든지 수정할 수 있습니다.

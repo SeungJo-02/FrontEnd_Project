@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { OcrTextField } from '@/api/ocr'
+import Icon from '@/components/common/Icon'
 
 interface OcrTextSelectorProps {
   imageSrc: string
@@ -79,7 +80,7 @@ export default function OcrTextSelector({
           onClick={onClose}
           className="flex items-center gap-1 text-sm font-semibold text-white/80"
         >
-          <span className="material-symbols-outlined text-[22px]">close</span>
+          <Icon name="close" className="text-[22px]" />
           닫기
         </button>
         <span className="text-sm font-semibold text-white/70">

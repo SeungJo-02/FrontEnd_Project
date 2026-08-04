@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { BookSummary } from '@/api/book'
+import Icon from '@/components/common/Icon'
 
 interface BookResultListProps {
   query: string
@@ -78,9 +79,7 @@ export default function BookResultList({
   if (!isLoading && !errorMessage && books.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-          search_off
-        </span>
+        <Icon name="search_off" className="text-5xl text-muted-foreground/30" />
         <p className="max-w-full truncate text-sm text-muted-foreground">
           &lsquo;{query}&rsquo;에 대한 도서 검색 결과가 없습니다.
         </p>
@@ -107,9 +106,7 @@ export default function BookResultList({
               />
             ) : (
               <div className="flex size-full items-center justify-center">
-                <span className="material-symbols-outlined text-2xl text-muted-foreground/40">
-                  menu_book
-                </span>
+                <Icon name="menu_book" className="text-2xl text-muted-foreground/40" />
               </div>
             )}
           </div>

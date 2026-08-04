@@ -5,6 +5,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import { getBlockedUsers, unblockUser, type BlockedUser } from '@/api/block'
 import { Avatar } from '@/components/common/Avatar'
 import { EmptyState } from '@/components/common/EmptyState'
+import Icon from '@/components/common/Icon'
 
 /**
  * 차단한 사용자 목록 페이지 (`/settings/blocked`).
@@ -140,7 +141,7 @@ export default function BlockedUsersPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <AppHeader title="차단한 사용자" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
-          <span className="material-symbols-outlined text-5xl text-muted-foreground/30">error</span>
+          <Icon name="error" className="text-5xl text-muted-foreground/30" />
           <p role="alert" className="text-sm text-muted-foreground">
             {errorMessage}
           </p>
