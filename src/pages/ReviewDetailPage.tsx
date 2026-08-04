@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
-import { cn } from '@/lib/utils'
-import { shareLink } from '@/lib/share'
+import { cn, formatRelativeTime } from '@/lib/utils'
 import {
   deleteReview,
   getReviewDetail,
@@ -14,6 +13,10 @@ import { addLibraryBook, backendToFrontStatus, type ReadingStatus } from '@/api/
 import AppHeader from '@/components/layout/AppHeader'
 import AddToLibrarySheet from '@/components/common/AddToLibrarySheet'
 import BottomNav from '@/components/layout/BottomNav'
+import BottomSheet from '@/components/common/BottomSheet'
+import ShareSheet from '@/components/common/ShareSheet'
+import { Avatar } from '@/components/common/Avatar'
+import StarRating from '@/components/common/StarRating'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +28,7 @@ import {
 import CommentSection from '@/components/comment/CommentSection'
 import ReportDialog from '@/components/common/ReportDialog'
 import { useAuthStore } from '@/store/authStore'
+import Icon, { type IconName } from '@/components/common/Icon'
 
 const readingStatusLabel: Record<ReadingStatus, string> = {
   finished: '다 읽음',
@@ -38,7 +42,6 @@ export default function ReviewDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const currentUserId = useAuthStore(state => state.user?.id)
-  const commentSectionRef = useRef<HTMLDivElement>(null)
   const reviewId = Number(id)
   const [review, setReview] = useState<ReviewDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -51,8 +54,11 @@ export default function ReviewDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null)
   const [isReportOpen, setIsReportOpen] = useState(false)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [librarySheetOpen, setLibrarySheetOpen] = useState(false)
   const [savedStatus, setSavedStatus] = useState<ReadingStatus | null>(null)
+  const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false)
+  const [isShareSheetOpen, setIsShareSheetOpen] = useState(false)
+  const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
 
   useEffect(() => {
     if (!Number.isFinite(reviewId)) {
@@ -64,7 +70,7 @@ export default function ReviewDetailPage() {
     const controller = new AbortController()
     setIsLoading(true)
     setErrorMessage(null)
-    setSheetOpen(false)
+    setLibrarySheetOpen(false)
     setSavedStatus(null)
     ;(async () => {
       try {
@@ -87,21 +93,21 @@ export default function ReviewDetailPage() {
     return () => controller.abort()
   }, [reviewId])
 
-  // 알림에서 #comments 해시로 진입 시 댓글 섹션으로 스크롤.
-  // CommentSection의 첫 렌더가 완료된 뒤 스크롤해야 하므로 짧은 지연 사용.
+  // 알림/피드에서 #comments 해시로 진입하면 댓글 시트를 자동으로 연다.
+  // (이전엔 인라인 댓글 섹션으로 스크롤했지만, 댓글이 시트로 옮겨져 여는 동작으로 대체)
+  const hasAutoOpenedCommentsRef = useRef(false)
   useEffect(() => {
-    if (review && location.hash === '#comments' && commentSectionRef.current) {
-      const timer = setTimeout(() => {
-        commentSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 350)
-      return () => clearTimeout(timer)
-    }
-  }, [location.hash, review])
+    if (!review || location.hash !== '#comments' || hasAutoOpenedCommentsRef.current) return
+    hasAutoOpenedCommentsRef.current = true
+    setIsCommentSheetOpen(true)
+    // 해시를 남겨두면 시트를 닫은 뒤 새로고침·뒤로가기로 돌아올 때마다 다시 열린다.
+    navigate(`${location.pathname}${location.search}`, { replace: true })
+  }, [location.hash, location.pathname, location.search, navigate, review])
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
-        <AppHeader title="감상 상세" showBack />
+        <AppHeader title="감상" showBack />
 
         <main aria-busy="true" className="flex flex-1 items-center justify-center pb-24">
           <p role="status" className="text-sm text-muted-foreground">
@@ -117,12 +123,10 @@ export default function ReviewDetailPage() {
   if (errorMessage || !review) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
-        <AppHeader title="감상 상세" showBack />
+        <AppHeader title="감상" showBack />
 
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
-          <span className="material-symbols-outlined text-6xl text-muted-foreground/30">
-            search_off
-          </span>
+          <Icon name="search_off" className="text-6xl text-muted-foreground/30" />
           <p className="text-lg font-bold text-muted-foreground">감상을 찾을 수 없습니다</p>
           {errorMessage && (
             <p role="alert" className="max-w-[280px] text-center text-sm text-muted-foreground">
@@ -146,16 +150,14 @@ export default function ReviewDetailPage() {
     ? backendToFrontStatus[review.readingStatus]
     : undefined
   const reviewStatus = frontReadingStatus ? readingStatusLabel[frontReadingStatus] : '기록'
-  const tags: string[] =
-    review.tags && review.tags.length > 0
-      ? review.tags
-      : [review.book.author, review.book.publisher, reviewStatus].filter((tag): tag is string =>
-          Boolean(tag)
-        )
-  const hasQuote = Boolean(review.quote)
-  const coverImageUrl = review.book.coverImageUrl
+  // 태그는 작성자가 직접 붙인 것만 보여준다. 예전엔 태그가 없으면 저자·출판사·독서상태를
+  // 태그처럼 지어내 붙였는데, 작성자가 쓰지 않은 말이 본인 태그로 보여서 오해를 샀다.
+  const tags: string[] = review.tags ?? []
   const isMyReview = currentUserId != null && review.user.userId === currentUserId
-  const reviewHeading = isMyReview ? '나의 감상' : `${review.user.nickname}의 감상`
+  const commentCount = displayCommentCount ?? review.commentCount
+
+  const goToProfile = () => navigate(`/user/${review.user.userId}`)
+  const goToBook = () => navigate(`/book/${review.book.bookId}`)
 
   const handleToggleLike = async () => {
     if (isLiking) return
@@ -169,7 +171,9 @@ export default function ReviewDetailPage() {
         ? await unlikeReview(review.reviewId)
         : await likeReview(review.reviewId)
       setLikeCount(result.likeCount)
-    } catch {
+    } catch (error) {
+      // 서버가 거절하면 낙관적 반영이 되돌아가 "안 눌린다"처럼 보인다. 원인을 남겨둔다.
+      if (import.meta.env.DEV) console.error('좋아요 처리 실패:', error)
       setLiked(wasLiked)
       setLikeCount(prevCount)
     } finally {
@@ -195,226 +199,274 @@ export default function ReviewDetailPage() {
     }
   }
 
-  const handleShare = async () => {
-    if (!review) return
-    const result = await shareLink({
-      title: `${review.book.title} 감상`,
-      text: `${review.user.nickname}님의 ${review.book.title} 감상`,
-      path: `/review/${review.reviewId}`,
-    })
-    if (result === 'copied') alert('링크가 복사되었습니다.')
-    else if (result === 'failed') alert('공유에 실패했습니다.')
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <AppHeader
-        title={review.book.title}
+        title="감상"
         showBack
         rightAction={
-          !isMyReview ? (
-            <button
-              type="button"
-              onClick={() => setIsReportOpen(true)}
-              aria-label="신고"
-              className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-            >
-              <span className="material-symbols-outlined">more_vert</span>
-            </button>
-          ) : undefined
+          <button
+            type="button"
+            onClick={() => setIsMoreSheetOpen(true)}
+            aria-label="더보기"
+            className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+          >
+            <Icon name="more_horiz" />
+          </button>
         }
       />
 
-      <main className="flex-1 overflow-y-auto pb-24">
-        {/* Book Card */}
-        <section className="px-5 py-5">
-          <div className="overflow-hidden rounded-[28px] bg-card shadow-sm">
-            <div className="bg-muted/30 px-6 py-8">
-              <div className="mx-auto aspect-[2/3] w-[62%] max-w-[260px] overflow-hidden rounded-md shadow-xl">
-                {coverImageUrl ? (
-                  <img
-                    src={coverImageUrl}
-                    alt={review.book.title}
-                    loading="lazy"
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <div className="flex size-full items-center justify-center bg-primary/10 text-primary/35">
-                    <span className="material-symbols-outlined text-5xl">menu_book</span>
-                  </div>
-                )}
-              </div>
-            </div>
+      <main className="flex-1 pb-24">
+        <article>
+          {/* 포스트 헤더 — 아바타 + 닉네임 + 책(인스타의 위치 라인 대응) */}
+          <header className="flex items-center gap-3 px-4 py-3">
+            <button
+              type="button"
+              onClick={goToProfile}
+              aria-label={`${review.user.nickname}님의 프로필 보기`}
+              className="shrink-0 rounded-full p-[2px] ring-2 ring-primary/25 transition-opacity hover:opacity-80"
+            >
+              <Avatar
+                src={review.user.profileImageUrl}
+                alt={review.user.nickname}
+                className="size-9"
+                iconClassName="text-[18px]"
+              />
+            </button>
 
-            <div className="px-6 py-5">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                  {reviewStatus}
-                </span>
-
-                <div className="flex items-center gap-1 rounded-full bg-primary/5 px-3 py-1.5 text-sm font-bold text-primary">
-                  <span
-                    className="material-symbols-outlined text-[18px]"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    star
-                  </span>
-                  <span>{review.rating.toFixed(1)}</span>
-                </div>
-              </div>
-
-              <h1 className="text-3xl font-bold tracking-tight">{review.book.title}</h1>
-              <p className="mt-2 text-lg font-medium text-muted-foreground">{review.book.author}</p>
-            </div>
-          </div>
-        </section>
-
-        {!isMyReview && (
-          <section className="px-5 pb-3">
-            {savedStatus ? (
-              <div className="flex items-center justify-center gap-2 rounded-xl bg-primary/5 py-3 text-sm font-semibold text-primary/70">
-                <span className="material-symbols-outlined text-[20px]">check_circle</span>
-                서재에 저장됨
-              </div>
-            ) : (
+            <div className="min-w-0 flex-1">
               <button
                 type="button"
-                onClick={() => setSheetOpen(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-card py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/5"
+                onClick={goToProfile}
+                className="block max-w-full truncate text-sm font-bold hover:underline"
               >
-                <span className="material-symbols-outlined text-[20px]">library_add</span>내 서재에
-                추가
+                {review.user.nickname}
               </button>
-            )}
-          </section>
-        )}
-
-        {isMyReview && (
-          <section className="flex gap-2 px-5 pb-3">
-            <button
-              type="button"
-              onClick={() => navigate(`/review/${review.reviewId}/edit`)}
-              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-card text-sm font-bold text-primary transition-colors hover:bg-primary/5"
-            >
-              <span className="material-symbols-outlined text-[18px]">edit</span>
-              수정
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDeleteErrorMessage(null)
-                setIsDeleteDialogOpen(true)
-              }}
-              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 text-sm font-bold text-destructive transition-colors hover:bg-destructive/10"
-            >
-              <span className="material-symbols-outlined text-[18px]">delete</span>
-              삭제
-            </button>
-          </section>
-        )}
-
-        {/* Review Content */}
-        <section className="px-5 py-3">
-          <h2 className="mb-4 text-2xl font-bold">{reviewHeading}</h2>
-          <div className="space-y-5 text-lg leading-8 text-foreground/90">
-            {review.content.split('\n\n').map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
-          </div>
-        </section>
-
-        {/* Quote Card — 인용구가 있을 때만 노출 */}
-        {hasQuote && (
-          <section className="px-5 py-5">
-            <div className="rounded-[24px] bg-primary/5 p-5">
-              <div className="mb-2 text-primary/20">
-                <span className="material-symbols-outlined text-[38px]">format_quote</span>
-              </div>
-
-              <div className="border-l-4 border-primary pl-4">
-                <p className="text-xl italic leading-9 text-foreground/85">{review.quote}</p>
-                <p className="mt-4 text-base text-muted-foreground">감상 중에서</p>
-              </div>
+              {/* 책 정보는 아래 표지 카드가 맡는다 — 여기선 작성 시각만 */}
+              <p className="text-xs text-muted-foreground">
+                {formatRelativeTime(review.createdAt)}
+              </p>
             </div>
-          </section>
-        )}
 
-        {/* Tags */}
-        <section className="px-5 py-2">
-          <div className="flex flex-wrap gap-2">
-            {tags.map(tag => (
-              <span
-                key={tag}
-                className="rounded-xl bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary/80"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        </section>
+            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+              {reviewStatus}
+            </span>
+          </header>
 
-        {/* Reactions
-            [HIGH-2 fix] 이전엔 좋아요 버튼이 로컬 state(liked)만 토글되어 새로고침 시 액션이
-            사라지고, likeCount 계산식도 초기값 대비 한 번의 토글에만 정확했다. POST/DELETE
-            좋아요 API가 본 PR 범위 밖이므로 일단 disabled로 처리해 서버에서 받은 isLiked /
-            likeCount를 표시만 한다. 좋아요 API 연동은 후속 이슈에서 처리.
-            [MED-3 fix] 이전엔 review.commentCount ?? 0 형태로 가드했지만 타입은 number(non-null)
-            이라 가드 불필요. CLAUDE.md "방어 코드 최소화" + 타입 신뢰성을 위해 ?? 0 제거. */}
-        <section className="mt-4 border-t border-border px-5 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-5 text-sm font-semibold text-muted-foreground">
-              {!isMyReview && (
-                <button
-                  type="button"
-                  onClick={handleToggleLike}
-                  disabled={isLiking}
-                  aria-label={liked ? '좋아요 취소' : '좋아요'}
-                  className={cn(
-                    'flex items-center gap-1.5 transition-colors disabled:opacity-60',
-                    liked ? 'text-primary' : 'hover:text-primary'
-                  )}
-                >
-                  <span
-                    className="material-symbols-outlined text-[20px]"
-                    style={{ fontVariationSettings: `'FILL' ${liked ? 1 : 0}` }}
-                  >
-                    favorite
-                  </span>
-                  <span>{likeCount}</span>
-                </button>
-              )}
-              {isMyReview && likeCount > 0 && (
-                <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                  <span className="material-symbols-outlined text-[20px]">favorite</span>
-                  <span>{likeCount}</span>
+          {/*
+            어떤 책의 감상인지 한눈에 보이도록 표지를 담은 책 카드를 둔다.
+            예전의 화면 절반을 차지하던 표지 히어로가 아니라, 감상 글이 주인공인 건
+            유지하면서 맥락만 주는 작은 카드다.
+          */}
+          <button
+            type="button"
+            onClick={goToBook}
+            aria-label={`${review.book.title} 도서 정보 보기`}
+            className="mx-4 mb-4 flex w-[calc(100%-2rem)] items-center gap-3 rounded-2xl bg-card p-3 text-left shadow-sm transition-colors hover:bg-primary/5"
+          >
+            <div className="h-[74px] w-[52px] shrink-0 overflow-hidden rounded-md bg-primary/5 shadow-md">
+              {review.book.coverImageUrl ? (
+                <img
+                  src={review.book.coverImageUrl}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="size-full object-cover"
+                />
+              ) : (
+                <div className="flex size-full items-center justify-center">
+                  <Icon name="menu_book" className="text-xl text-primary/30" />
                 </div>
               )}
-
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
-                <span>{displayCommentCount ?? review.commentCount}</span>
-              </div>
             </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 break-keep text-sm font-bold leading-5">
+                {review.book.title}
+              </p>
+              <p className="mt-1 line-clamp-1 break-keep text-xs text-muted-foreground">
+                {review.book.author}
+              </p>
+              <StarRating rating={review.rating} size="sm" className="mt-1.5" />
+            </div>
+
+            <Icon name="chevron_right" className="shrink-0 text-xl text-muted-foreground/50" />
+          </button>
+
+          {/* 포스트 본문 — 감상 글이 주인공 */}
+          <div className="px-4 pb-1">
+            <div className="space-y-4 text-[15px] leading-7 text-foreground/90">
+              {review.content.split('\n\n').map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+            </div>
+
+            {review.quote && (
+              <blockquote className="mt-4 rounded-2xl bg-primary/5 px-4 py-4">
+                <Icon name="format_quote" className="text-[26px] leading-none text-primary/25" />
+                <p className="mt-1 border-l-[3px] border-primary/60 pl-3 text-[15px] italic leading-7 text-foreground/85">
+                  {review.quote}
+                </p>
+              </blockquote>
+            )}
+
+            {tags.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-x-2 gap-y-1">
+                {tags.map(tag => (
+                  <span key={tag} className="text-sm font-medium text-primary/80">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 액션 바 — 인스타 아이콘 행 (좋아요·댓글·공유 좌측, 서재 저장 우측) */}
+          <div className="flex items-center gap-1 px-2 pt-3">
+            {/* 본인 감상에도 좋아요를 허용한다. 예전엔 표시만 하고 눌리지 않아
+                "좋아요가 안 눌린다"는 오해를 샀다. */}
+            <button
+              type="button"
+              onClick={handleToggleLike}
+              disabled={isLiking}
+              aria-label={liked ? '좋아요 취소' : '좋아요'}
+              aria-pressed={liked}
+              className={cn(
+                'flex size-11 items-center justify-center transition-all active:scale-90 disabled:opacity-60',
+                liked ? 'text-red-500' : 'text-foreground hover:text-red-500'
+              )}
+            >
+              <Icon name="favorite" className="text-[26px]" filled={liked} />
+            </button>
 
             <button
               type="button"
-              onClick={handleShare}
-              aria-label="공유"
-              className="text-muted-foreground transition-colors hover:text-primary"
+              onClick={() => setIsCommentSheetOpen(true)}
+              aria-label="댓글 보기"
+              className="flex size-11 items-center justify-center text-foreground transition-all active:scale-90 hover:text-primary"
             >
-              <span className="material-symbols-outlined text-[22px]">share</span>
+              <Icon name="chat_bubble_outline" className="text-[26px]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsShareSheetOpen(true)}
+              aria-label="공유"
+              className="flex size-11 items-center justify-center text-foreground transition-all active:scale-90 hover:text-primary"
+            >
+              <Icon name="send" className="text-[26px]" />
+            </button>
+
+            {!isMyReview && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (savedStatus != null) return
+                  setLibrarySheetOpen(true)
+                }}
+                // disabled로 두면 탭 순서에서 빠져 스크린리더가 '저장됨' 라벨을 읽을 길이
+                // 없어진다. aria-disabled로 포커스는 남기고 동작만 막는다.
+                aria-disabled={savedStatus != null}
+                aria-label={savedStatus ? '서재에 저장됨' : '내 서재에 추가'}
+                className={cn(
+                  'ml-auto flex size-11 items-center justify-center transition-all active:scale-90',
+                  savedStatus ? 'text-primary' : 'text-foreground hover:text-primary'
+                )}
+              >
+                <Icon name="bookmark" className="text-[26px]" filled={Boolean(savedStatus)} />
+              </button>
+            )}
+          </div>
+
+          {/* 좋아요 수 · 댓글 모두 보기 (작성 시각은 헤더로 옮겨 중복을 없앴다) */}
+          <div className="space-y-1 px-4 pb-2">
+            <p className="text-sm font-bold">좋아요 {likeCount}개</p>
+
+            {savedStatus && (
+              <p role="status" className="sr-only">
+                내 서재에 저장했습니다.
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsCommentSheetOpen(true)}
+              className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {commentCount > 0 ? `댓글 ${commentCount}개 모두 보기` : '첫 댓글을 남겨보세요'}
             </button>
           </div>
-        </section>
-
-        <div ref={commentSectionRef}>
-          <CommentSection
-            reviewId={review.reviewId}
-            initialCommentCount={review.commentCount}
-            onCommentCountChange={setDisplayCommentCount}
-          />
-        </div>
+        </article>
       </main>
+
+      {/* 댓글 시트 */}
+      <BottomSheet
+        isOpen={isCommentSheetOpen}
+        onClose={() => setIsCommentSheetOpen(false)}
+        title={`댓글 ${commentCount}개`}
+        size="tall"
+        // 시트를 닫아도 CommentSection을 살려둔다. 언마운트되면 작성 중이던 댓글 초안이
+        // 사라지고, 다시 열 때 카운트가 서버 초기값으로 되돌아가며 목록도 매번 재요청된다.
+        keepMounted
+      >
+        <CommentSection
+          reviewId={review.reviewId}
+          initialCommentCount={review.commentCount}
+          onCommentCountChange={setDisplayCommentCount}
+          variant="sheet"
+        />
+      </BottomSheet>
+
+      {/* 공유 시트 */}
+      <ShareSheet
+        isOpen={isShareSheetOpen}
+        onClose={() => setIsShareSheetOpen(false)}
+        title={`${review.book.title} 감상`}
+        text={`${review.user.nickname}님의 ${review.book.title} 감상`}
+        path={`/review/${review.reviewId}`}
+      />
+
+      {/* 더보기 시트 — 내 감상이면 수정/삭제, 타인 감상이면 신고 */}
+      <BottomSheet
+        isOpen={isMoreSheetOpen}
+        onClose={() => setIsMoreSheetOpen(false)}
+        title="더보기"
+      >
+        <div className="flex flex-col px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
+          {isMyReview ? (
+            <>
+              <MoreRow
+                icon="edit"
+                label="감상 수정"
+                onClick={() => {
+                  setIsMoreSheetOpen(false)
+                  navigate(`/review/${review.reviewId}/edit`)
+                }}
+              />
+              <MoreRow
+                icon="delete"
+                label="감상 삭제"
+                destructive
+                onClick={() => {
+                  setIsMoreSheetOpen(false)
+                  setDeleteErrorMessage(null)
+                  setIsDeleteDialogOpen(true)
+                }}
+              />
+            </>
+          ) : (
+            <MoreRow
+              icon="flag"
+              label="신고"
+              destructive
+              onClick={() => {
+                setIsMoreSheetOpen(false)
+                setIsReportOpen(true)
+              }}
+            />
+          )}
+        </div>
+      </BottomSheet>
 
       <Dialog
         open={isDeleteDialogOpen}
@@ -473,10 +525,10 @@ export default function ReviewDetailPage() {
         targetId={review.reviewId}
       />
 
-      {!isMyReview && review && (
+      {!isMyReview && (
         <AddToLibrarySheet
-          isOpen={sheetOpen}
-          onClose={() => setSheetOpen(false)}
+          isOpen={librarySheetOpen}
+          onClose={() => setLibrarySheetOpen(false)}
           onSave={handleSaveToLibrary}
           bookId={String(review.book.bookId)}
         />
@@ -484,5 +536,32 @@ export default function ReviewDetailPage() {
 
       <BottomNav />
     </div>
+  )
+}
+
+/** 더보기 시트의 액션 한 줄. */
+function MoreRow({
+  icon,
+  label,
+  onClick,
+  destructive,
+}: {
+  icon: IconName
+  label: string
+  onClick: () => void
+  destructive?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex items-center gap-4 rounded-xl px-4 py-3.5 text-left transition-colors',
+        destructive ? 'text-destructive hover:bg-destructive/5' : 'hover:bg-primary/5'
+      )}
+    >
+      <Icon name={icon} className="text-[22px]" />
+      <span className="text-[15px] font-medium">{label}</span>
+    </button>
   )
 }

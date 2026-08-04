@@ -10,12 +10,12 @@ import {
 } from '@/api/book'
 import { likeReview, unlikeReview } from '@/api/review'
 import { cn, formatRelativeTime } from '@/lib/utils'
-import { useAuthStore } from '@/store/authStore'
 import AppHeader from '@/components/layout/AppHeader'
 import BottomNav from '@/components/layout/BottomNav'
 import StarRating from '@/components/common/StarRating'
 import { Avatar } from '@/components/common/Avatar'
 import { EmptyState } from '@/components/common/EmptyState'
+import Icon from '@/components/common/Icon'
 
 const sortOptions: { label: string; value: BookReviewSort }[] = [
   { label: '최신순', value: 'latest' },
@@ -33,7 +33,6 @@ const sortOptions: { label: string; value: BookReviewSort }[] = [
 export default function BookReviewsListPage() {
   const { bookId: bookIdParam } = useParams()
   const navigate = useNavigate()
-  const currentUserId = useAuthStore(state => state.user?.id)
   const bookId = Number(bookIdParam)
 
   const [book, setBook] = useState<BookDetail | null>(null)
@@ -220,7 +219,9 @@ export default function BookReviewsListPage() {
       setReviews(prev =>
         prev.map(r => (r.reviewId === reviewId ? { ...r, likeCount: result.likeCount } : r))
       )
-    } catch {
+    } catch (error) {
+      // 서버가 거절하면 낙관적 반영이 되돌아가 "안 눌린다"처럼 보인다. 원인을 남겨둔다.
+      if (import.meta.env.DEV) console.error('좋아요 처리 실패:', error)
       setReviews(prev =>
         prev.map(r =>
           r.reviewId === reviewId ? { ...r, isLiked: currentlyLiked, likeCount: currentCount } : r
@@ -258,9 +259,7 @@ export default function BookReviewsListPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <AppHeader title="독자 감상" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
-          <span className="material-symbols-outlined text-6xl text-muted-foreground/30">
-            search_off
-          </span>
+          <Icon name="search_off" className="text-6xl text-muted-foreground/30" />
           <p className="text-lg font-bold text-muted-foreground">도서를 찾을 수 없습니다</p>
           {errorMessage && (
             <p role="alert" className="max-w-[280px] text-center text-sm text-muted-foreground">
@@ -296,7 +295,7 @@ export default function BookReviewsListPage() {
               />
             ) : (
               <div className="flex h-14 w-10 items-center justify-center rounded-md bg-primary/5">
-                <span className="material-symbols-outlined text-primary/40">menu_book</span>
+                <Icon name="menu_book" className="text-primary/40" />
               </div>
             )}
             <div className="flex flex-col">
@@ -337,7 +336,6 @@ export default function BookReviewsListPage() {
 
         <div className="flex flex-col gap-6 px-6">
           {reviews.map(review => {
-            const isMyReview = currentUserId != null && review.user.userId === currentUserId
             return (
               <article
                 key={review.reviewId}
@@ -386,9 +384,7 @@ export default function BookReviewsListPage() {
                       <p className="leading-relaxed">{review.content}</p>
                     </div>
                     <div className="absolute inset-0 flex flex-col items-center justify-center rounded-lg bg-primary/5 transition-colors group-hover:bg-primary/10">
-                      <span className="material-symbols-outlined mb-1 text-primary">
-                        visibility_off
-                      </span>
+                      <Icon name="visibility_off" className="mb-1 text-primary" />
                       <p className="text-sm font-semibold text-primary">
                         스포일러 포함 — 탭하여 보기
                       </p>
@@ -397,34 +393,24 @@ export default function BookReviewsListPage() {
                 )}
 
                 <div className="mt-4 flex items-center gap-6 text-muted-foreground">
-                  {!isMyReview ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleToggleLike(review.reviewId, review.isLiked, review.likeCount)
-                      }
-                      aria-label={review.isLiked ? '좋아요 취소' : '좋아요'}
-                      className={cn(
-                        'flex items-center gap-1 transition-colors',
-                        review.isLiked ? 'text-primary' : 'hover:text-primary'
-                      )}
-                    >
-                      <span
-                        className="material-symbols-outlined text-lg"
-                        style={{ fontVariationSettings: `'FILL' ${review.isLiked ? 1 : 0}` }}
-                      >
-                        favorite
-                      </span>
-                      <span className="text-xs">{review.likeCount}</span>
-                    </button>
-                  ) : review.likeCount > 0 ? (
-                    <div className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-lg">favorite</span>
-                      <span className="text-xs">{review.likeCount}</span>
-                    </div>
-                  ) : null}
+                  {/* 본인 감상에도 좋아요를 허용한다(ReviewCard·ReviewDetailPage와 동일 규칙) */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleToggleLike(review.reviewId, review.isLiked, review.likeCount)
+                    }
+                    aria-label={review.isLiked ? '좋아요 취소' : '좋아요'}
+                    aria-pressed={review.isLiked}
+                    className={cn(
+                      'flex items-center gap-1 transition-colors',
+                      review.isLiked ? 'text-primary' : 'hover:text-primary'
+                    )}
+                  >
+                    <Icon name="favorite" className="text-lg" filled={review.isLiked} />
+                    <span className="text-xs">{review.likeCount}</span>
+                  </button>
                   <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-lg">chat_bubble</span>
+                    <Icon name="chat_bubble" className="text-lg" />
                     <span className="text-xs">{review.commentCount}</span>
                   </div>
                 </div>

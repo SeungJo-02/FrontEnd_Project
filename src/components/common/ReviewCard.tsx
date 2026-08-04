@@ -7,6 +7,7 @@ import type { ReadingStatus } from '@/api/library'
 import StarRating from './StarRating'
 import ReportDialog from './ReportDialog'
 import { Avatar } from './Avatar'
+import Icon from '@/components/common/Icon'
 
 export interface ReviewCardData {
   id: number
@@ -81,7 +82,9 @@ function ReviewCard({ review, className }: ReviewCardProps) {
       const result = wasLiked ? await unlikeReview(review.id) : await likeReview(review.id)
       if (!isMountedRef.current) return
       setLikeCount(result.likeCount)
-    } catch {
+    } catch (error) {
+      // 서버가 거절하면 낙관적 반영이 되돌아가 "안 눌린다"처럼 보인다. 원인을 남겨둔다.
+      if (import.meta.env.DEV) console.error('좋아요 처리 실패:', error)
       if (!isMountedRef.current) return
       setLiked(wasLiked)
       setLikeCount(prevCount)
@@ -141,7 +144,7 @@ function ReviewCard({ review, className }: ReviewCardProps) {
                   aria-label="신고"
                   className="flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                 >
-                  <span className="material-symbols-outlined text-[18px]">more_vert</span>
+                  <Icon name="more_vert" className="text-[18px]" />
                 </button>
               )}
             </div>
@@ -169,7 +172,7 @@ function ReviewCard({ review, className }: ReviewCardProps) {
                     aria-hidden="true"
                     className="flex size-full items-center justify-center text-xs text-muted-foreground/60"
                   >
-                    <span className="material-symbols-outlined text-2xl">menu_book</span>
+                    <Icon name="menu_book" className="text-2xl" />
                   </div>
                 )}
               </div>
@@ -200,13 +203,22 @@ function ReviewCard({ review, className }: ReviewCardProps) {
               type="button"
               onClick={() => setSpoilerRevealed(true)}
               aria-label="스포일러 감상 보기"
-              className="group relative mb-4 w-full cursor-pointer"
+              className="group relative mb-4 w-full cursor-pointer overflow-hidden rounded-lg border border-primary/10 bg-primary/5 transition-colors hover:bg-primary/10"
             >
-              <div className="pointer-events-none select-none opacity-40 blur-md">
-                <p className="text-sm leading-relaxed">{review.content}</p>
+              {/*
+                흐린 본문은 배경 장식이라 절대 배치로 뒤에 깔고, 높이는 앞의 안내 문구가 정한다.
+                예전엔 반대여서 본문이 한 줄뿐인 감상은 상자가 한 줄 높이로 찌그러지고
+                아이콘·문구가 상자 밖으로 삐져나왔다.
+              */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 select-none px-3 py-2 opacity-40 blur-md"
+              >
+                <p className="line-clamp-3 text-sm leading-relaxed">{review.content}</p>
               </div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center rounded-lg border border-primary/10 bg-primary/5 transition-colors group-hover:bg-primary/10">
-                <span className="material-symbols-outlined mb-1 text-primary">visibility_off</span>
+
+              <div className="relative flex flex-col items-center justify-center gap-1 px-4 py-6">
+                <Icon name="visibility_off" className="text-primary" />
                 <p className="text-[13px] font-bold text-primary">스포일러 포함 — 탭하여 보기</p>
               </div>
             </button>
@@ -214,36 +226,28 @@ function ReviewCard({ review, className }: ReviewCardProps) {
 
           {/* Actions (이동 영역 아님) */}
           <div className="flex items-center gap-6 border-t border-primary/5 pt-2">
-            {!isMyReview ? (
-              <button
-                type="button"
-                onClick={() => toggleLike()}
-                disabled={isLiking}
-                aria-label={liked ? '좋아요 취소' : '좋아요'}
-                className={cn(
-                  'flex items-center gap-1.5 transition-colors disabled:opacity-60',
-                  liked ? 'text-primary' : 'hover:text-primary'
-                )}
-              >
-                <span className={cn('material-symbols-outlined text-xl', liked && 'fill-icon')}>
-                  favorite
-                </span>
-                <span className="text-xs font-bold">{likeCount}</span>
-              </button>
-            ) : likeCount > 0 ? (
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <span className="material-symbols-outlined text-xl">favorite</span>
-                <span className="text-xs font-bold">{likeCount}</span>
-              </div>
-            ) : null}
+            {/* 본인 감상에도 좋아요를 허용한다. 예전엔 내 감상이면 숫자만 보여줘
+                "좋아요가 안 눌린다"는 오해를 샀다. (ReviewDetailPage와 동일 규칙) */}
+            <button
+              type="button"
+              onClick={() => toggleLike()}
+              disabled={isLiking}
+              aria-label={liked ? '좋아요 취소' : '좋아요'}
+              aria-pressed={liked}
+              className={cn(
+                'flex items-center gap-1.5 transition-colors disabled:opacity-60',
+                liked ? 'text-primary' : 'hover:text-primary'
+              )}
+            >
+              <Icon name="favorite" className="text-xl" filled={liked} />
+              <span className="text-xs font-bold">{likeCount}</span>
+            </button>
             <Link
               to={`/review/${review.id}#comments`}
               aria-label="댓글 보기"
               className="flex items-center gap-1.5 transition-colors hover:text-primary"
             >
-              <span className="material-symbols-outlined text-xl" aria-hidden="true">
-                chat_bubble
-              </span>
+              <Icon name="chat_bubble" className="text-xl" />
               <span className="text-xs font-bold">{review.commentCount ?? 0}</span>
             </Link>
           </div>
