@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import UserSearchCard from '@/components/common/UserSearchCard'
 import type { BookSearchItem, UserSearchItem } from '@/api/search'
+import Icon from '@/components/common/Icon'
 
 interface AllTabContentProps {
   isLoading: boolean
@@ -50,9 +51,7 @@ export default function AllTabContent({
   if (!isLoading && books.length === 0 && users.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-          search_off
-        </span>
+        <Icon name="search_off" className="text-5xl text-muted-foreground/30" />
         <p className="text-sm text-muted-foreground">검색 결과가 없습니다.</p>
       </div>
     )
@@ -86,9 +85,7 @@ export default function AllTabContent({
                     />
                   ) : (
                     <div className="flex size-full items-center justify-center">
-                      <span className="material-symbols-outlined text-xl text-muted-foreground/40">
-                        menu_book
-                      </span>
+                      <Icon name="menu_book" className="text-xl text-muted-foreground/40" />
                     </div>
                   )}
                 </div>

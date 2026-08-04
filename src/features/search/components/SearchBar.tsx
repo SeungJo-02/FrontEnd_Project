@@ -1,4 +1,5 @@
 import type { SearchType } from '@/features/search/types'
+import Icon from '@/components/common/Icon'
 
 interface SearchBarProps {
   value: string
@@ -32,7 +33,7 @@ export default function SearchBar({
       </label>
       <div className="flex h-12 w-full items-stretch rounded-xl border border-primary/10 bg-primary/5">
         <div className="flex items-center justify-center pl-4 text-primary/60">
-          <span className="material-symbols-outlined text-[22px]">search</span>
+          <Icon name="search" className="text-[22px]" />
         </div>
         <input
           id="book-search-input"
@@ -58,7 +59,7 @@ export default function SearchBar({
             aria-label="바코드 스캔으로 ISBN 검색"
             className="flex items-center justify-center pr-4 text-primary transition-colors hover:text-primary/70"
           >
-            <span className="material-symbols-outlined text-[24px]">barcode_scanner</span>
+            <Icon name="barcode_scanner" className="text-[24px]" />
           </button>
         )}
       </div>

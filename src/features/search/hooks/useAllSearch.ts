@@ -5,6 +5,7 @@ import {
   SEARCH_DEBOUNCE_MS,
   toSearchErrorMessage,
 } from '@/features/search/types'
+import { isBoxSetTitle } from '@/features/search/isBoxSet'
 import { useDebouncedValue } from './useDebouncedValue'
 
 export interface AllSearchView {
@@ -44,8 +45,11 @@ export function useAllSearch(query: string, isActive: boolean): AllSearchView {
 
   const data = isDebouncing ? undefined : queryResult.data
 
+  // 도서 탭과 동일하게 묶음(세트) 상품은 제외한다.
+  const books = (data?.books.content ?? []).filter(book => !isBoxSetTitle(book.title))
+
   return {
-    books: data?.books.content ?? [],
+    books,
     users: data?.users.content ?? [],
     booksHasMore: data?.books.hasNext ?? false,
     usersHasMore: data?.users.hasNext ?? false,

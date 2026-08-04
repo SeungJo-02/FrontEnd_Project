@@ -1,3 +1,4 @@
+import Icon from '@/components/common/Icon'
 interface RecentKeywordsProps {
   keywords: string[]
   onSelect: (keyword: string) => void
@@ -44,9 +45,7 @@ export default function RecentKeywords({
               onClick={() => onRemove(keyword)}
               aria-label={`'${keyword}' 최근 검색어 삭제`}
             >
-              <span className="material-symbols-outlined cursor-pointer text-[16px] text-primary/60">
-                close
-              </span>
+              <Icon name="close" className="cursor-pointer text-[16px] text-primary/60" />
             </button>
           </div>
         ))}
