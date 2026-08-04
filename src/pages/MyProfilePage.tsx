@@ -1,86 +1,65 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import BottomNav from '@/components/layout/BottomNav'
+import ReadingCalendar from '@/components/library/ReadingCalendar'
 import { getMyProfile, type MyProfile } from '@/api/member'
-import { getMyReviews, REVIEW_PAGE_SIZE, type ReviewListItem } from '@/api/review'
-import { getWisdomTower, type WisdomTowerResponse } from '@/api/library'
-import { formatRelativeTime } from '@/lib/utils'
+import { getMyLibrary, type LibraryBookSummary } from '@/api/library'
 import { shareLink } from '@/lib/share'
 import { useAuthStore } from '@/store/authStore'
+import Icon from '@/components/common/Icon'
 
-const TOWER_PALETTE = [
-  { bg: '#2B2626', text: 'text-white' },
-  { bg: '#314244', text: 'text-white' },
-  { bg: '#4B2E26', text: 'text-white' },
-  { bg: '#C2A065', text: 'text-white' },
-  { bg: '#6C4B3F', text: 'text-white' },
-  { bg: '#9B8378', text: 'text-white' },
-  { bg: '#CBBDB8', text: 'text-foreground' },
-  { bg: '#E2DBD8', text: 'text-primary' },
-]
-
-const TOWER_WIDTHS = [92, 88, 90, 86, 91, 84, 89, 82, 87, 93, 85, 90, 88, 86, 91]
+/** 캘린더/통계는 서재 전체가 필요하다. 무한정 돌지 않도록 페이지 수를 제한한다. */
+const LIBRARY_PAGE_SIZE = 100
+const LIBRARY_MAX_PAGES = 10
 
 /**
  * 본인 프로필 페이지.
  *
- * 세 개의 독립 데이터 소스:
+ * 두 개의 독립 데이터 소스:
  * 1. `getMyProfile` — 프로필 정보 + authStore 동기화
- * 2. `getWisdomTower` — 완독 도서 스택(지혜의 탑) + 통계 카드 + 월별 독서량 파생
- * 3. `getMyReviews` — 공개 감상 타임라인
+ * 2. `getMyLibrary` — 독서 캘린더 + 통계 카드 + 월별 독서량 파생
+ *
+ * 전용 캘린더 API가 없어 서재 응답의 startedAt/finishedAt에서 파생한다.
  */
 export default function MyProfilePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [profile, setProfile] = useState<MyProfile | null>(null)
-  const [wisdomTower, setWisdomTower] = useState<WisdomTowerResponse | null>(null)
+  const [libraryBooks, setLibraryBooks] = useState<LibraryBookSummary[]>([])
+  const [isLibraryLoading, setIsLibraryLoading] = useState(true)
+  const [libraryErrorMessage, setLibraryErrorMessage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [reviews, setReviews] = useState<ReviewListItem[]>([])
-  const [reviewNextCursor, setReviewNextCursor] = useState<number | null>(null)
-  const [hasMoreReviews, setHasMoreReviews] = useState(false)
-  const [isReviewsLoading, setIsReviewsLoading] = useState(true)
-  const [isReviewsLoadingMore, setIsReviewsLoadingMore] = useState(false)
-  const [reviewsErrorMessage, setReviewsErrorMessage] = useState<string | null>(null)
-
-  const loadMoreControllerRef = useRef<AbortController | null>(null)
-
-  const visibleReviews = useMemo(
-    () => reviews.filter(r => r.reviewVisibility === 'PUBLIC'),
-    [reviews]
-  )
 
   const now = useMemo(() => new Date(), [])
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth()
 
+  const finishedBooks = useMemo(() => libraryBooks.filter(book => book.finishedAt), [libraryBooks])
+
   const thisYearBooks = useMemo(
     () =>
-      wisdomTower?.books.filter(
-        b => b.finishedAt && new Date(b.finishedAt).getFullYear() === currentYear
-      ).length ?? 0,
-    [wisdomTower, currentYear]
+      finishedBooks.filter(
+        book => new Date(book.finishedAt as string).getFullYear() === currentYear
+      ).length,
+    [finishedBooks, currentYear]
   )
 
   /**
-   * wisdom tower books의 finishedAt을 올해 월별로 그룹핑.
-   * 1월~현재 월까지만 표시하여 미래 월의 빈 바를 방지.
-   * `now`에서 파생된 `currentYear`/`currentMonth`를 사용하여 단일 시점 기준 보장.
+   * 완독일을 올해 월별로 그룹핑. 1월~현재 월까지만 표시해 미래 월의 빈 바를 없앤다.
+   * `now`에서 파생된 `currentYear`/`currentMonth`를 써 단일 시점 기준을 보장한다.
    */
   const monthlyStats = useMemo(() => {
     const counts = new Array(currentMonth + 1).fill(0) as number[]
-    if (wisdomTower?.books) {
-      for (const book of wisdomTower.books) {
-        if (!book.finishedAt) continue
-        const date = new Date(book.finishedAt)
-        if (date.getFullYear() !== currentYear) continue
-        const month = date.getMonth()
-        if (month <= currentMonth) counts[month]++
-      }
+    for (const book of finishedBooks) {
+      const date = new Date(book.finishedAt as string)
+      if (date.getFullYear() !== currentYear) continue
+      const month = date.getMonth()
+      if (month <= currentMonth) counts[month]++
     }
     return counts.map((value, i) => ({ month: `${i + 1}월`, value }))
-  }, [wisdomTower, currentYear, currentMonth])
+  }, [finishedBooks, currentYear, currentMonth])
 
   const maxStatValue = useMemo(
     () => Math.max(...monthlyStats.map(item => item.value), 1),
@@ -93,17 +72,9 @@ export default function MyProfilePage() {
     setErrorMessage(null)
     ;(async () => {
       try {
-        const [result, tower] = await Promise.all([
-          getMyProfile(controller.signal),
-          getWisdomTower(controller.signal).catch(err => {
-            if (!axios.isCancel(err) && import.meta.env.DEV)
-              console.error('Failed to load wisdom tower:', err)
-            return null
-          }),
-        ])
+        const result = await getMyProfile(controller.signal)
         if (controller.signal.aborted) return
         setProfile(result)
-        if (tower) setWisdomTower(tower)
 
         const state = useAuthStore.getState()
         // user가 비어 있어도(부팅 직후 충전 전) accessToken만 있으면 동기화한다.
@@ -134,69 +105,43 @@ export default function MyProfilePage() {
     return () => controller.abort()
   }, [location.key])
 
+  // 서재 전체를 커서로 훑어 캘린더/통계 데이터를 만든다. 프로필 로딩과 독립적으로 두어
+  // 서재 조회가 느리거나 실패해도 프로필 화면 자체는 뜨게 한다.
   useEffect(() => {
     const controller = new AbortController()
-    setIsReviewsLoading(true)
-    setReviewsErrorMessage(null)
+    setIsLibraryLoading(true)
+    setLibraryErrorMessage(null)
     ;(async () => {
       try {
-        const response = await getMyReviews({
-          cursor: null,
-          status: 'PUBLISHED',
-          signal: controller.signal,
-        })
+        const collected: LibraryBookSummary[] = []
+        let cursor: number | null = null
+
+        for (let page = 0; page < LIBRARY_MAX_PAGES; page++) {
+          const response = await getMyLibrary({
+            cursor,
+            limit: LIBRARY_PAGE_SIZE,
+            signal: controller.signal,
+          })
+          if (controller.signal.aborted) return
+          collected.push(...response.content)
+          if (!response.hasNext || response.nextCursor == null) break
+          cursor = response.nextCursor
+        }
+
         if (controller.signal.aborted) return
-        setReviews(response)
-        setReviewNextCursor(response.length > 0 ? response[response.length - 1].reviewId : null)
-        setHasMoreReviews(response.length === REVIEW_PAGE_SIZE)
+        setLibraryBooks(collected)
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
-        setReviewsErrorMessage(
-          error instanceof Error ? error.message : '감상 목록을 불러오지 못했습니다.'
+        setLibraryErrorMessage(
+          error instanceof Error ? error.message : '독서 기록을 불러오지 못했습니다.'
         )
       } finally {
-        if (!controller.signal.aborted) setIsReviewsLoading(false)
+        if (!controller.signal.aborted) setIsLibraryLoading(false)
       }
     })()
 
-    return () => {
-      controller.abort()
-      loadMoreControllerRef.current?.abort()
-    }
+    return () => controller.abort()
   }, [location.key])
-
-  const handleLoadMoreReviews = async () => {
-    if (isReviewsLoadingMore || !hasMoreReviews) return
-
-    loadMoreControllerRef.current?.abort()
-    const controller = new AbortController()
-    loadMoreControllerRef.current = controller
-
-    setIsReviewsLoadingMore(true)
-    setReviewsErrorMessage(null)
-    try {
-      const response = await getMyReviews({
-        cursor: reviewNextCursor,
-        status: 'PUBLISHED',
-        signal: controller.signal,
-      })
-      if (controller.signal.aborted) return
-      if (response.length === 0) {
-        setHasMoreReviews(false)
-        return
-      }
-      setReviews(prev => [...prev, ...response])
-      setReviewNextCursor(response[response.length - 1].reviewId)
-      setHasMoreReviews(response.length === REVIEW_PAGE_SIZE)
-    } catch (error) {
-      if (axios.isCancel(error) || controller.signal.aborted) return
-      setReviewsErrorMessage(
-        error instanceof Error ? error.message : '감상 목록을 더 불러오지 못했습니다.'
-      )
-    } finally {
-      if (!controller.signal.aborted) setIsReviewsLoadingMore(false)
-    }
-  }
 
   const handleShare = async () => {
     if (!profile) return
@@ -254,7 +199,7 @@ export default function MyProfilePage() {
           </div>
         </header>
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
-          <span className="material-symbols-outlined text-6xl text-muted-foreground/30">error</span>
+          <Icon name="error" className="text-6xl text-muted-foreground/30" />
           <p role="alert" className="text-lg font-bold text-muted-foreground">
             {errorMessage ?? '프로필을 불러올 수 없습니다.'}
           </p>
@@ -271,8 +216,6 @@ export default function MyProfilePage() {
     )
   }
 
-  const towerBooks = wisdomTower?.books ?? []
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
@@ -284,7 +227,7 @@ export default function MyProfilePage() {
               className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
               aria-label="설정 페이지로 이동"
             >
-              <span className="material-symbols-outlined">settings</span>
+              <Icon name="settings" />
             </button>
           </div>
 
@@ -304,7 +247,7 @@ export default function MyProfilePage() {
               aria-label="공유"
               className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
             >
-              <span className="material-symbols-outlined">share</span>
+              <Icon name="share" />
             </button>
           </div>
         </div>
@@ -322,9 +265,7 @@ export default function MyProfilePage() {
                 className="h-32 w-32 rounded-full object-cover"
               />
             ) : (
-              <span className="material-symbols-outlined text-6xl text-muted-foreground/40">
-                person
-              </span>
+              <Icon name="person" className="text-6xl text-muted-foreground/40" />
             )}
 
             <button
@@ -333,7 +274,7 @@ export default function MyProfilePage() {
               aria-label="프로필 편집"
               className="absolute bottom-1 right-1 flex h-10 w-10 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-sm transition-all hover:opacity-90 active:scale-95"
             >
-              <span className="material-symbols-outlined text-[18px]">edit</span>
+              <Icon name="edit" className="text-[18px]" />
             </button>
           </div>
 
@@ -377,9 +318,7 @@ export default function MyProfilePage() {
 
             <div className="rounded-[24px] bg-card px-3 py-5 text-center shadow-sm">
               <p className="text-xs font-semibold text-primary/60">총 완독</p>
-              <p className="mt-2 text-3xl font-bold text-primary">
-                {wisdomTower?.totalCount ?? 0}권
-              </p>
+              <p className="mt-2 text-3xl font-bold text-primary">{finishedBooks.length}권</p>
             </div>
 
             <div className="rounded-[24px] bg-card px-3 py-5 text-center shadow-sm">
@@ -389,46 +328,14 @@ export default function MyProfilePage() {
           </div>
         </section>
 
-        {/* Wisdom Tower */}
+        {/* Reading Calendar */}
         <section className="px-6 pt-10">
-          <div className="mb-6 text-center">
-            <h2 className="text-2xl font-bold text-primary/90">Your Wisdom Tower</h2>
-          </div>
-
-          {towerBooks.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-[24px] bg-card py-10 shadow-sm">
-              <span className="material-symbols-outlined text-5xl text-muted-foreground/30">
-                auto_stories
-              </span>
-              <p className="text-sm text-muted-foreground">아직 완독한 책이 없습니다</p>
-              <p className="text-xs text-muted-foreground/60">책을 다 읽으면 여기에 쌓여요</p>
-            </div>
-          ) : (
-            <div className="flex flex-col-reverse items-center">
-              {towerBooks.map((book, index) => {
-                const palette = TOWER_PALETTE[index % TOWER_PALETTE.length]
-                const width = TOWER_WIDTHS[index % TOWER_WIDTHS.length]
-                return (
-                  <Link
-                    key={book.libraryBookId}
-                    to={`/library/${book.libraryBookId}`}
-                    className="relative block h-[58px] transition-opacity hover:opacity-80"
-                    style={{
-                      width: `${width}%`,
-                      marginTop: index === 0 ? 0 : '-2px',
-                    }}
-                  >
-                    <div
-                      className={`flex h-full w-full items-center justify-center rounded-[16px] text-lg font-bold shadow-md ${palette.text}`}
-                      style={{ backgroundColor: palette.bg }}
-                    >
-                      <span className="truncate px-4">{book.title}</span>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
+          <h2 className="mb-5 text-[28px] font-bold tracking-tight text-foreground">독서 캘린더</h2>
+          <ReadingCalendar
+            books={libraryBooks}
+            isLoading={isLibraryLoading}
+            errorMessage={libraryErrorMessage}
+          />
         </section>
 
         {/* Reading Statistics */}
@@ -473,109 +380,18 @@ export default function MyProfilePage() {
         </section>
 
         {/* Drafts Entry */}
-        <section className="px-6 pt-10">
+        <section className="px-6 pb-10 pt-10">
           <button
             type="button"
             onClick={() => navigate('/drafts')}
             className="flex w-full items-center gap-3 rounded-[20px] bg-card px-5 py-4 shadow-sm transition-colors hover:bg-primary/5"
           >
-            <span className="material-symbols-outlined text-2xl text-primary">draft</span>
+            <Icon name="draft" className="text-2xl text-primary" />
             <span className="flex-1 text-left text-base font-bold text-foreground">
               임시저장한 감상
             </span>
-            <span className="material-symbols-outlined text-xl text-muted-foreground/50">
-              chevron_right
-            </span>
+            <Icon name="chevron_right" className="text-xl text-muted-foreground/50" />
           </button>
-        </section>
-
-        {/* Public Review Timeline */}
-        <section className="px-6 pb-10 pt-10">
-          <h2 className="mb-5 text-[28px] font-bold tracking-tight text-foreground">
-            공개 감상 타임라인
-          </h2>
-
-          {isReviewsLoading ? (
-            <p role="status" className="py-8 text-center text-sm text-muted-foreground">
-              감상을 불러오는 중...
-            </p>
-          ) : visibleReviews.length === 0 && !reviewsErrorMessage ? (
-            <div className="rounded-[24px] bg-card px-5 py-8 text-center text-sm text-muted-foreground">
-              아직 공개 감상이 없습니다.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {visibleReviews.map(review => (
-                <Link
-                  key={review.reviewId}
-                  to={`/review/${review.reviewId}`}
-                  className="flex cursor-pointer gap-4 rounded-[24px] bg-card p-4 shadow-sm transition-colors hover:bg-primary/5"
-                >
-                  <div className="flex h-[96px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-primary/5">
-                    {review.book.coverImageUrl ? (
-                      <img
-                        src={review.book.coverImageUrl}
-                        alt={`${review.book.title} 표지`}
-                        loading="lazy"
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <span className="material-symbols-outlined text-3xl text-muted-foreground/30">
-                        menu_book
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1 pt-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="line-clamp-1 text-xl font-bold text-foreground">
-                        {review.book.title}
-                      </h3>
-                      <span className="shrink-0 text-sm font-bold text-primary">
-                        ★ {review.rating.toFixed(1)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm font-medium text-primary/40">
-                      {formatRelativeTime(review.createdAt)}
-                    </p>
-                    <p className="mt-3 line-clamp-2 text-base leading-6 text-foreground/65">
-                      {review.isSpoiler ? '스포일러가 포함된 감상입니다.' : review.content}
-                    </p>
-                    <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">favorite</span>
-                        {review.likeCount}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">chat_bubble</span>
-                        {review.commentCount}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {reviewsErrorMessage && (
-            <p
-              role="alert"
-              className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-            >
-              {reviewsErrorMessage}
-            </p>
-          )}
-
-          {hasMoreReviews && !isReviewsLoading && (
-            <button
-              type="button"
-              onClick={handleLoadMoreReviews}
-              disabled={isReviewsLoadingMore}
-              className="mt-5 w-full rounded-xl bg-primary/10 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isReviewsLoadingMore ? '불러오는 중...' : '더 보기'}
-            </button>
-          )}
         </section>
       </main>
 
