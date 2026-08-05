@@ -102,14 +102,15 @@ export default function EmptyFeedGuide() {
       )}
 
       <div className="mt-8 flex flex-col gap-2">
+        {/* 감상은 책에 딸리므로 빈손으로 작성 화면에 보내지 않고 책부터 고르게 한다. */}
         <Link
-          to="/review/write"
+          to="/search?tab=book"
           className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-[15px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
         >
           <Icon name="edit_note" className="text-xl" />첫 감상 쓰기
         </Link>
         <Link
-          to="/search"
+          to="/search?tab=user"
           className="flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-3.5 text-[15px] font-bold transition-colors hover:bg-primary/5"
         >
           <Icon name="person_search" className="text-xl" />
