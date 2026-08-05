@@ -17,6 +17,15 @@ const MAX_QUOTE_LENGTH = 200
 const MAX_TAGS = 5
 const MAX_TAG_LENGTH = 15
 
+/** 별점 옆에 붙는 말. 숫자만으로는 몇 점이 어떤 뜻인지 감이 안 온다. */
+const RATING_LABELS: Record<number, string> = {
+  1: '별로였어요',
+  2: '그저 그래요',
+  3: '괜찮아요',
+  4: '좋았어요',
+  5: '최고예요',
+}
+
 /**
  * 입력값을 태그 한 개로 다듬는다. 앞에 붙인 `#`과 공백을 걷어내고, 태그 안의 연속 공백은
  * 하나로 줄인다. 다듬은 결과가 비면 태그로 인정하지 않는다(빈 문자열 반환).
@@ -46,7 +55,8 @@ export default function WriteReviewPage() {
   const libraryBookId = (location.state as { libraryBookId?: number } | null)?.libraryBookId
 
   const [book, setBook] = useState<ReviewFormBook | null>(null)
-  const [rating, setRating] = useState(5)
+  // null이면 아직 안 고른 상태. 기본값을 미리 채워두면 그 점수로 쏠려 별점이 의미를 잃는다.
+  const [rating, setRating] = useState<number | null>(null)
   const [reviewText, setReviewText] = useState('')
   const [quoteText, setQuoteText] = useState('')
   const [isQuoteEditorOpen, setIsQuoteEditorOpen] = useState(false)
@@ -276,6 +286,13 @@ export default function WriteReviewPage() {
       return
     }
 
+    // 내용과 마찬가지로 임시저장에도 요구한다. rating은 API 필수 필드라 안 고른 상태를
+    // 표현할 값이 없고, 임의의 기본값을 대신 보내면 사용자가 매기지 않은 점수가 남는다.
+    if (rating == null) {
+      setSubmitErrorMessage('별점을 선택해주세요.')
+      return
+    }
+
     setSubmittingStatus(reviewStatus)
     setSubmitErrorMessage(null)
     try {
@@ -388,7 +405,7 @@ export default function WriteReviewPage() {
 
       <main className="flex-1 overflow-y-auto pb-24">
         {/* Book Info */}
-        <section className="px-8 py-6">
+        <section className="px-6 py-6">
           <div className="flex items-center gap-4">
             <div className="flex h-24 w-16 shrink-0 items-center justify-center rounded-2xl bg-card shadow-sm">
               <div className="h-20 w-12 overflow-hidden rounded-md border border-primary/10 bg-primary/5">
@@ -415,54 +432,52 @@ export default function WriteReviewPage() {
         </section>
 
         {/* Rating */}
-        <section className="py-4">
-          <div className="w-full bg-primary/5 px-8 py-6">
-            <p className="mb-5 text-center text-sm font-semibold uppercase tracking-[0.28em] text-muted-foreground">
-              Rate your reading experience
+        <section className="px-6 py-4">
+          <div className="rounded-2xl bg-card px-6 py-6 shadow-sm">
+            <p className="mb-3 text-center text-sm font-bold text-muted-foreground">
+              이 책, 어떠셨나요?
             </p>
 
-            <div className="flex justify-center gap-2">
+            <div
+              role="radiogroup"
+              aria-label="별점"
+              className="flex items-center justify-center gap-0.5"
+            >
               {[1, 2, 3, 4, 5].map(value => (
                 <button
                   key={value}
                   type="button"
+                  role="radio"
+                  aria-checked={value === rating}
                   onClick={() => setRating(value)}
-                  className="transition-transform active:scale-90"
+                  // 별은 28px이지만 여백을 더해 손가락이 닿는 영역을 44px로 맞춘다.
+                  className="rounded-full p-2 transition-transform active:scale-90"
                   aria-label={`${value}점`}
                 >
                   <Icon
                     name="star"
-                    filled={value <= rating}
+                    filled={rating != null && value <= rating}
                     className={cn(
-                      'text-[40px]',
-                      value <= rating ? 'text-primary' : 'text-primary/25'
+                      'block text-[28px]',
+                      rating != null && value <= rating
+                        ? 'text-accent-gold'
+                        : 'text-muted-foreground/25'
                     )}
                   />
                 </button>
               ))}
             </div>
-          </div>
-        </section>
 
-        {/* 입력 보조 — 인용구 직접 입력 / 사진 속 문장 추출 */}
-        <section className="grid grid-cols-2 gap-3 px-6 pb-1 pt-4">
-          <button
-            type="button"
-            onClick={() => setIsQuoteEditorOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-sm font-bold shadow-sm transition-colors hover:bg-primary/5"
-          >
-            <Icon name="format_quote" className="text-[20px]" />
-            인용구 추가
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsOcrSheetOpen(true)}
-            disabled={isOcrLoading}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-sm font-bold shadow-sm transition-colors hover:bg-primary/5 disabled:opacity-60"
-          >
-            <Icon name="text_fields" className="text-[20px]" />
-            {isOcrLoading ? '추출 중...' : '텍스트 추출'}
-          </button>
+            {/* 고른 점수가 무슨 뜻인지 말로 확인시켜 준다. 자리는 항상 차지해 화면이 튀지 않는다. */}
+            <p
+              className={cn(
+                'mt-2 text-center text-sm font-bold',
+                rating == null ? 'text-muted-foreground/60' : 'text-primary'
+              )}
+            >
+              {rating == null ? '별점을 골라주세요' : `${rating}점 · ${RATING_LABELS[rating]}`}
+            </p>
+          </div>
         </section>
 
         {/* Review Text */}
@@ -480,9 +495,32 @@ export default function WriteReviewPage() {
           />
         </section>
 
-        {/* Quote Editor */}
+        {/* 인용구 — 닫혀 있으면 진입 버튼, 열면 그 자리에서 편집기로 바뀐다.
+            누른 자리에서 바로 열려야 결과가 화면 밖으로 밀려나지 않는다. */}
+        {!isQuoteEditorOpen && (
+          <section className="grid grid-cols-2 gap-3 px-6 py-2">
+            <button
+              type="button"
+              onClick={() => setIsQuoteEditorOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-sm font-bold shadow-sm transition-colors hover:bg-primary/5"
+            >
+              <Icon name="format_quote" className="text-[20px]" />
+              인용구 추가
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsOcrSheetOpen(true)}
+              disabled={isOcrLoading}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-sm font-bold shadow-sm transition-colors hover:bg-primary/5 disabled:opacity-60"
+            >
+              <Icon name="photo_camera" className="text-[20px]" />
+              {isOcrLoading ? '인식 중...' : '사진으로 입력'}
+            </button>
+          </section>
+        )}
+
         {isQuoteEditorOpen && (
-          <section className="px-8 py-2">
+          <section className="px-6 py-2">
             <div className="relative rounded-2xl bg-primary/5 p-5">
               <button
                 type="button"
@@ -520,7 +558,7 @@ export default function WriteReviewPage() {
           </section>
         )}
 
-        {/* Spoiler Toggle — 인용구/텍스트 추출 진입은 본문 위 버튼 행으로 옮겼다 */}
+        {/* Spoiler Toggle */}
         <section className="flex items-center justify-end gap-2 px-6 py-3">
           <label className="flex shrink-0 cursor-pointer select-none items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-muted-foreground">
             <input
@@ -534,7 +572,7 @@ export default function WriteReviewPage() {
         </section>
 
         {/* Tags */}
-        <section className="px-8 py-3">
+        <section className="px-6 py-3">
           <div className="mb-2 flex items-baseline justify-between">
             <label htmlFor="tag-input" className="text-sm font-bold text-foreground">
               태그
@@ -611,7 +649,7 @@ export default function WriteReviewPage() {
         </section>
 
         {/* Action Buttons */}
-        <section className="px-8 pb-6 pt-2">
+        <section className="px-6 pb-6 pt-2">
           {submitErrorMessage && (
             <p role="alert" className="mb-3 text-sm font-semibold text-destructive">
               {submitErrorMessage}
