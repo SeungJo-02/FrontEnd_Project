@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { searchBooks, type BookSummary } from '@/api/book'
@@ -6,9 +6,37 @@ import { getMyProfile } from '@/api/member'
 import type { Genre } from '@/api/genre'
 import Icon from '@/components/common/Icon'
 import { EmptyState } from '@/components/common/EmptyState'
+import { cn } from '@/lib/utils'
 
 /** 한 번에 보여줄 추천 책 수. 가로 스크롤 한 화면에 적당한 양. */
 const BOOK_COUNT = 8
+/** 무작위로 고를 검색 페이지 범위. 너무 뒤로 가면 결과가 비어 1페이지로 되돌아온다. */
+const PAGE_RANGE = 4
+
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)]
+}
+
+/**
+ * 관심 장르 중 하나를 골라 그 장르의 책을 가져온다.
+ *
+ * 장르와 페이지를 매번 다시 뽑아, 화면을 볼 때마다 다른 책이 걸리도록 한다.
+ * 항상 첫 장르·첫 페이지만 보면 여러 장르를 골라둔 의미도 없고 화면이 늘 똑같다.
+ */
+async function loadRecommendedBooks(
+  genres: Genre[],
+  signal: AbortSignal
+): Promise<{ genre: Genre; books: BookSummary[] }> {
+  const genre = pickRandom(genres)
+  const page = 1 + Math.floor(Math.random() * PAGE_RANGE)
+
+  const result = await searchBooks(genre.name, BOOK_COUNT, page, signal)
+  if (result.content.length > 0) return { genre, books: result.content }
+
+  // 뒤쪽 페이지에는 결과가 없을 수 있다 — 빈손으로 두지 말고 첫 페이지로 되돌아간다.
+  const firstPage = await searchBooks(genre.name, BOOK_COUNT, 1, signal)
+  return { genre, books: firstPage.content }
+}
 
 /**
  * 피드에 보여줄 감상이 하나도 없을 때의 첫 방문 화면.
@@ -23,8 +51,14 @@ const BOOK_COUNT = 8
  */
 export default function EmptyFeedGuide() {
   const [genres, setGenres] = useState<Genre[]>([])
+  /** 지금 보여주는 책들을 고른 장르. */
+  const [genre, setGenre] = useState<Genre | null>(null)
   const [books, setBooks] = useState<BookSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isShuffling, setIsShuffling] = useState(false)
+
+  /** 진행 중인 "다른 책" 요청. 연타하면 앞의 요청을 버린다. */
+  const shuffleControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -37,10 +71,10 @@ export default function EmptyFeedGuide() {
         // 관심 장르가 없으면(온보딩을 건너뛴 계정) 책 추천 없이 안내만 보여준다.
         if (profile.genres.length === 0) return
 
-        // 여러 장르를 한 번에 검색할 방법이 없어 첫 장르만 쓴다. 고른 순서가 곧 우선순위.
-        const result = await searchBooks(profile.genres[0].name, BOOK_COUNT, 1, controller.signal)
+        const picked = await loadRecommendedBooks(profile.genres, controller.signal)
         if (controller.signal.aborted) return
-        setBooks(result.content)
+        setGenre(picked.genre)
+        setBooks(picked.books)
       } catch (error) {
         // 추천은 덤이다. 실패해도 아래 안내와 버튼은 그대로 쓸 수 있어야 하므로 조용히 넘어간다.
         if (axios.isCancel(error) || controller.signal.aborted) return
@@ -50,8 +84,33 @@ export default function EmptyFeedGuide() {
       }
     })()
 
-    return () => controller.abort()
+    return () => {
+      controller.abort()
+      shuffleControllerRef.current?.abort()
+    }
   }, [])
+
+  const handleShuffle = useCallback(async () => {
+    if (genres.length === 0) return
+
+    shuffleControllerRef.current?.abort()
+    const controller = new AbortController()
+    shuffleControllerRef.current = controller
+    setIsShuffling(true)
+
+    try {
+      const picked = await loadRecommendedBooks(genres, controller.signal)
+      if (controller.signal.aborted) return
+      setGenre(picked.genre)
+      setBooks(picked.books)
+    } catch (error) {
+      // 실패하면 보고 있던 책을 그대로 둔다 — 빈 화면으로 바뀌는 게 더 나쁘다.
+      if (axios.isCancel(error) || controller.signal.aborted) return
+      if (import.meta.env.DEV) console.error('[EmptyFeedGuide] 추천 책 갱신 실패', error)
+    } finally {
+      if (!controller.signal.aborted) setIsShuffling(false)
+    }
+  }, [genres])
 
   if (isLoading) {
     return <EmptyState icon="auto_stories" message="피드를 준비하고 있어요..." />
@@ -68,12 +127,26 @@ export default function EmptyFeedGuide() {
         </p>
       </div>
 
-      {books.length > 0 && (
+      {books.length > 0 && genre && (
         <section className="mt-8" aria-labelledby="empty-feed-books">
-          <h3 id="empty-feed-books" className="text-sm font-bold">
-            <span className="text-primary">{genres[0].name}</span> 좋아하시죠?
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">관심 장르로 찾아본 책이에요.</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 id="empty-feed-books" className="text-sm font-bold">
+                <span className="text-primary">{genre.name}</span> 좋아하시죠?
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">관심 장르로 찾아본 책이에요.</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleShuffle}
+              disabled={isShuffling}
+              className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-bold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+            >
+              <Icon name="refresh" className={cn('text-base', isShuffling && 'animate-spin')} />
+              다른 책
+            </button>
+          </div>
 
           {/* 카드가 화면 밖으로 이어지는 걸 보여주려 가로 스크롤로 둔다. */}
           <ul className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-2">

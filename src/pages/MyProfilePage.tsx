@@ -5,7 +5,6 @@ import BottomNav from '@/components/layout/BottomNav'
 import ReadingCalendar from '@/components/library/ReadingCalendar'
 import { getMyProfile, type MyProfile } from '@/api/member'
 import { getMyLibrary, type LibraryBookSummary } from '@/api/library'
-import { shareLink } from '@/lib/share'
 import { useAuthStore } from '@/store/authStore'
 import Icon from '@/components/common/Icon'
 
@@ -143,17 +142,6 @@ export default function MyProfilePage() {
     return () => controller.abort()
   }, [location.key])
 
-  const handleShare = async () => {
-    if (!profile) return
-    const result = await shareLink({
-      title: `${profile.nickname}님의 Shelfeed 프로필`,
-      text: `${profile.nickname}님의 Shelfeed 프로필을 확인해보세요.`,
-      path: `/user/${profile.userId}`,
-    })
-    if (result === 'copied') alert('링크가 복사되었습니다.')
-    else if (result === 'failed') alert('공유에 실패했습니다.')
-  }
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -240,16 +228,8 @@ export default function MyProfilePage() {
             </Link>
           </div>
 
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleShare}
-              aria-label="공유"
-              className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-            >
-              <Icon name="share" />
-            </button>
-          </div>
+          {/* 로고가 가운데 오도록 왼쪽 설정 버튼과 짝을 맞추는 빈 칸. */}
+          <div />
         </div>
       </header>
 
