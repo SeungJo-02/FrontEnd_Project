@@ -1,12 +1,11 @@
 import { create } from 'zustand'
+import type { FeedCursor } from '@/api/feed'
 import type { ReviewCardData } from '@/components/common/ReviewCard'
 
 export interface FeedCache {
   items: ReviewCardData[]
-  /** 다음 페이지 커서 — 마지막 항목의 작성 시각 */
-  nextCursorCreatedAt: string | null
-  /** 다음 페이지 커서 — 마지막 항목의 리뷰 ID */
-  nextCursorId: number | null
+  /** 다음 페이지 토큰(API 계층이 발급한 불투명 값). */
+  nextCursor: FeedCursor | null
   hasNext: boolean
   scrollY: number
 }
