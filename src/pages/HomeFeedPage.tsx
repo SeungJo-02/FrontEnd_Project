@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { getFeed, type FeedCursor, type FeedItem } from '@/api/feed'
 import { getUnreadNotificationCount } from '@/api/notification'
 import BottomNav from '@/components/layout/BottomNav'
-import { EmptyState } from '@/components/common/EmptyState'
+import EmptyFeedGuide from '@/components/feed/EmptyFeedGuide'
 import PopupBanner from '@/components/common/PopupBanner'
 import ReviewCard, { type ReviewCardData } from '@/components/common/ReviewCard'
 import { useFeedStore, setFeedCache, clearFeedCache } from '@/store/feedStore'
@@ -395,9 +395,8 @@ export default function HomeFeedPage() {
           </p>
         )}
 
-        {!isLoading && !errorMessage && items.length === 0 && (
-          <EmptyState icon="auto_stories" message="아직 볼 수 있는 감상이 없어요." />
-        )}
+        {/* 팔로우가 없는 신규 사용자는 피드가 빈다 — 안내만 두지 말고 첫 행동으로 이어준다. */}
+        {!isLoading && !errorMessage && items.length === 0 && <EmptyFeedGuide />}
 
         {items.map(memo => (
           <div key={memo.id} className="p-4 pt-4 first:pt-4 [&:not(:first-child)]:pt-0">
