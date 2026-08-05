@@ -24,6 +24,7 @@ function toReviewCardData(item: FeedItem): ReviewCardData {
       title: item.book.title,
       author: item.book.author,
       coverImageUrl: item.book.coverImageUrl ?? '',
+      category: item.book.category,
     },
     author: {
       id: item.user.userId,
