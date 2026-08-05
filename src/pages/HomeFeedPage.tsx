@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { cn } from '@/lib/utils'
-import { getFeed, type FeedItem } from '@/api/feed'
+import { getFeed, type FeedCursor, type FeedItem } from '@/api/feed'
 import { getUnreadNotificationCount } from '@/api/notification'
 import BottomNav from '@/components/layout/BottomNav'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -70,8 +70,8 @@ export default function HomeFeedPage() {
   const [unreadCount, setUnreadCount] = useState(0)
 
   const [items, setItems] = useState<ReviewCardData[]>([])
-  const [nextCursorCreatedAt, setNextCursorCreatedAt] = useState<string | null>(null)
-  const [nextCursorId, setNextCursorId] = useState<number | null>(null)
+  /** 다음 페이지 토큰. 내용은 API 계층의 관심사라 여기서는 들여다보지 않고 그대로 되돌려준다. */
+  const [nextCursor, setNextCursor] = useState<FeedCursor | null>(null)
   const [hasNext, setHasNext] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -87,16 +87,14 @@ export default function HomeFeedPage() {
     hasNext,
     isLoading,
     isLoadingMore,
-    nextCursorCreatedAt,
-    nextCursorId,
+    nextCursor,
     loadMoreError,
   })
   stateRef.current = {
     hasNext,
     isLoading,
     isLoadingMore,
-    nextCursorCreatedAt,
-    nextCursorId,
+    nextCursor,
     loadMoreError,
   }
 
@@ -109,10 +107,9 @@ export default function HomeFeedPage() {
     setErrorMessage(null)
     setLoadMoreError(null)
     try {
-      const response = await getFeed({ cursorCreatedAt: null, cursorId: null })
+      const response = await getFeed({ cursor: null })
       setItems(response.content.map(toReviewCardData))
-      setNextCursorCreatedAt(response.nextCursorCreatedAt)
-      setNextCursorId(response.nextCursorId)
+      setNextCursor(response.nextCursor)
       setHasNext(response.hasNext)
       clearFeedCache()
     } catch (error) {
@@ -137,8 +134,7 @@ export default function HomeFeedPage() {
       if (itemsRef.current.length === 0) return
       setFeedCache({
         items: itemsRef.current,
-        nextCursorCreatedAt: stateRef.current.nextCursorCreatedAt,
-        nextCursorId: stateRef.current.nextCursorId,
+        nextCursor: stateRef.current.nextCursor,
         hasNext: stateRef.current.hasNext,
         scrollY: window.scrollY,
       })
@@ -146,8 +142,7 @@ export default function HomeFeedPage() {
 
     if (cache && cache.items.length > 0) {
       setItems(cache.items)
-      setNextCursorCreatedAt(cache.nextCursorCreatedAt)
-      setNextCursorId(cache.nextCursorId)
+      setNextCursor(cache.nextCursor)
       setHasNext(cache.hasNext)
       setIsLoading(false)
       setIsLoadingMore(false)
@@ -168,15 +163,10 @@ export default function HomeFeedPage() {
     setIsLoading(true)
     ;(async () => {
       try {
-        const response = await getFeed({
-          cursorCreatedAt: null,
-          cursorId: null,
-          signal: controller.signal,
-        })
+        const response = await getFeed({ cursor: null, signal: controller.signal })
         if (controller.signal.aborted) return
         setItems(response.content.map(toReviewCardData))
-        setNextCursorCreatedAt(response.nextCursorCreatedAt)
-        setNextCursorId(response.nextCursorId)
+        setNextCursor(response.nextCursor)
         setHasNext(response.hasNext)
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
@@ -253,11 +243,7 @@ export default function HomeFeedPage() {
     setIsLoadingMore(true)
     setLoadMoreError(null)
     try {
-      const response = await getFeed({
-        cursorCreatedAt: s.nextCursorCreatedAt,
-        cursorId: s.nextCursorId,
-        signal: controller.signal,
-      })
+      const response = await getFeed({ cursor: s.nextCursor, signal: controller.signal })
       if (controller.signal.aborted) return
       // 중복 제거: 페이지 경계에서 동일 리뷰가 재등장하면 key 충돌·카드 중복이 생기므로
       // 기존 id Set으로 필터링해 append한다(BookReviewsListPage/BookSearchPage 패턴과 통일).
@@ -268,10 +254,7 @@ export default function HomeFeedPage() {
         return deduped.length > 0 ? [...prev, ...deduped] : prev
       })
       const hasNewItems = response.content.length > 0
-      if (hasNewItems) {
-        setNextCursorCreatedAt(response.nextCursorCreatedAt)
-        setNextCursorId(response.nextCursorId)
-      }
+      if (hasNewItems) setNextCursor(response.nextCursor)
       setHasNext(hasNewItems && response.hasNext)
     } catch (error) {
       if (axios.isCancel(error) || controller.signal.aborted) return
