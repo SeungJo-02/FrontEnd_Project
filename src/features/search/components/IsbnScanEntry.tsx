@@ -1,8 +1,9 @@
 import { lazy, Suspense } from 'react'
 import { isValidIsbn13 } from '@/features/search/types'
+import { withChunkReload } from '@/lib/chunkReload'
 
 // ZXing 의존성을 가진 모달은 사용자가 카메라 버튼을 눌렀을 때만 다운로드
-const IsbnScannerModal = lazy(() => import('@/components/common/IsbnScannerModal'))
+const IsbnScannerModal = lazy(withChunkReload(() => import('@/components/common/IsbnScannerModal')))
 
 interface IsbnScanEntryProps {
   open: boolean
