@@ -28,6 +28,8 @@ export interface ReviewCardData {
     title: string
     author: string
     coverImageUrl: string
+    /** 분류(장르). 응답에 따라 없을 수 있어 있을 때만 배지로 보여준다. */
+    category?: string | null
   }
 }
 
@@ -180,8 +182,17 @@ function ReviewCard({ review, className }: ReviewCardProps) {
                 <h3 className="text-lg font-bold leading-tight text-primary">
                   {review.book.title}
                 </h3>
-                <p className="mb-2 text-sm">{review.book.author}</p>
-                {review.rating && <StarRating rating={review.rating} size="md" />}
+                <p className="text-sm">{review.book.author}</p>
+                {review.book.category && (
+                  <span className="mt-1.5 w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                    {review.book.category}
+                  </span>
+                )}
+                {review.rating && (
+                  <div className="mt-2">
+                    <StarRating rating={review.rating} size="md" />
+                  </div>
+                )}
               </div>
             </div>
 
