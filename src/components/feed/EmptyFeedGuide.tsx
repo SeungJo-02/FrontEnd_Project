@@ -4,9 +4,9 @@ import axios from 'axios'
 import { searchBooks, type BookSummary } from '@/api/book'
 import { getMyProfile } from '@/api/member'
 import type { Genre } from '@/api/genre'
-import Icon from '@/components/common/Icon'
 import { EmptyState } from '@/components/common/EmptyState'
 import { cn } from '@/lib/utils'
+import Icon from '@/components/common/Icon'
 
 /** 한 번에 보여줄 추천 책 수. 가로 스크롤 한 화면에 적당한 양. */
 const BOOK_COUNT = 8
@@ -166,7 +166,7 @@ export default function EmptyFeedGuide() {
                     </div>
                   )}
                   <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-4">{book.title}</p>
-                  <p className="line-clamp-1 text-[11px] text-muted-foreground">{book.author}</p>
+                  <p className="line-clamp-1 text-2xs text-muted-foreground">{book.author}</p>
                 </Link>
               </li>
             ))}
@@ -178,13 +178,13 @@ export default function EmptyFeedGuide() {
         {/* 감상은 책에 딸리므로 빈손으로 작성 화면에 보내지 않고 책부터 고르게 한다. */}
         <Link
           to="/search?tab=book"
-          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-[15px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-md font-bold text-primary-foreground transition-opacity hover:opacity-90"
         >
           <Icon name="edit_note" className="text-xl" />첫 감상 쓰기
         </Link>
         <Link
           to="/search?tab=user"
-          className="flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-3.5 text-[15px] font-bold transition-colors hover:bg-primary/5"
+          className="flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-3.5 text-md font-bold transition-colors hover:bg-primary/5"
         >
           <Icon name="person_search" className="text-xl" />
           함께 읽을 사람 찾기

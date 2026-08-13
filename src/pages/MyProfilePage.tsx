@@ -6,6 +6,12 @@ import ReadingCalendar from '@/components/library/ReadingCalendar'
 import { getMyProfile, type MyProfile } from '@/api/member'
 import { getMyLibrary, type LibraryBookSummary } from '@/api/library'
 import { useAuthStore } from '@/store/authStore'
+import { Avatar } from '@/components/common/Avatar'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import Button from '@/components/ui/Button'
+import IconButton from '@/components/ui/IconButton'
+import StickyHeader from '@/components/layout/StickyHeader'
+import StatTile from '@/components/ui/StatTile'
 import Icon from '@/components/common/Icon'
 
 /** 캘린더/통계는 서재 전체가 필요하다. 무한정 돌지 않도록 페이지 수를 제한한다. */
@@ -144,8 +150,8 @@ export default function MyProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+      <Screen>
+        <StickyHeader>
           <div className="grid grid-cols-3 items-center px-4 py-3">
             <div />
             <div className="flex justify-center">
@@ -158,21 +164,21 @@ export default function MyProfilePage() {
             </div>
             <div />
           </div>
-        </header>
-        <main aria-busy="true" className="flex flex-1 items-center justify-center pb-24">
+        </StickyHeader>
+        <ScreenBody centered aria-busy="true">
           <p role="status" className="text-sm text-muted-foreground">
             불러오는 중...
           </p>
-        </main>
+        </ScreenBody>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   if (errorMessage || !profile) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+      <Screen>
+        <StickyHeader>
           <div className="grid grid-cols-3 items-center px-4 py-3">
             <div />
             <div className="flex justify-center">
@@ -185,38 +191,27 @@ export default function MyProfilePage() {
             </div>
             <div />
           </div>
-        </header>
+        </StickyHeader>
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
           <Icon name="error" className="text-6xl text-muted-foreground/30" />
           <p role="alert" className="text-lg font-bold text-muted-foreground">
             {errorMessage ?? '프로필을 불러올 수 없습니다.'}
           </p>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
-            돌아가기
-          </button>
+          <Button onClick={() => navigate(-1)}>돌아가기</Button>
         </main>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+    <Screen>
+      <StickyHeader>
         <div className="grid grid-cols-3 items-center px-4 py-3">
           <div className="flex justify-start">
-            <button
-              type="button"
-              onClick={() => navigate('/settings')}
-              className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-              aria-label="설정 페이지로 이동"
-            >
+            <IconButton onClick={() => navigate('/settings')} aria-label="설정 페이지로 이동">
               <Icon name="settings" />
-            </button>
+            </IconButton>
           </div>
 
           <div className="flex justify-center">
@@ -231,22 +226,20 @@ export default function MyProfilePage() {
           {/* 로고가 가운데 오도록 왼쪽 설정 버튼과 짝을 맞추는 빈 칸. */}
           <div />
         </div>
-      </header>
+      </StickyHeader>
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <ScreenBody>
         {/* Profile Intro */}
         <section className="px-6 pt-8 text-center">
           <div className="relative mx-auto mb-5 flex h-36 w-36 items-center justify-center rounded-full bg-primary/10">
-            {profile.profileImageUrl ? (
-              <img
-                src={profile.profileImageUrl}
-                alt={`${profile.nickname} 프로필 이미지`}
-                loading="lazy"
-                className="h-32 w-32 rounded-full object-cover"
-              />
-            ) : (
-              <Icon name="person" className="text-6xl text-muted-foreground/40" />
-            )}
+            {/* 사진이 없으면 Avatar가 닉네임 기반 자동 아바타를 그린다 (피드·댓글과 동일) */}
+            <Avatar
+              src={profile.profileImageUrl}
+              alt={`${profile.nickname} 프로필 이미지`}
+              name={profile.nickname}
+              className="h-32 w-32"
+              iconClassName="text-6xl text-muted-foreground/40"
+            />
 
             <button
               type="button"
@@ -291,20 +284,11 @@ export default function MyProfilePage() {
         {/* Stats */}
         <section className="px-6 pt-8">
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-[24px] bg-card px-3 py-5 text-center shadow-sm">
-              <p className="text-xs font-semibold text-primary/60">올해 읽은 책</p>
-              <p className="mt-2 text-3xl font-bold text-primary">{thisYearBooks}권</p>
-            </div>
+            <StatTile label="올해 읽은 책" value={<>{thisYearBooks}권</>} />
 
-            <div className="rounded-[24px] bg-card px-3 py-5 text-center shadow-sm">
-              <p className="text-xs font-semibold text-primary/60">총 완독</p>
-              <p className="mt-2 text-3xl font-bold text-primary">{finishedBooks.length}권</p>
-            </div>
+            <StatTile label="총 완독" value={<>{finishedBooks.length}권</>} />
 
-            <div className="rounded-[24px] bg-card px-3 py-5 text-center shadow-sm">
-              <p className="text-xs font-semibold text-primary/60">감상</p>
-              <p className="mt-2 text-3xl font-bold text-primary">{profile.reviewCount}개</p>
-            </div>
+            <StatTile label="감상" value={<>{profile.reviewCount}개</>} />
           </div>
         </section>
 
@@ -324,7 +308,7 @@ export default function MyProfilePage() {
             <h2 className="text-[28px] font-bold tracking-tight text-foreground">나의 독서 통계</h2>
           </div>
 
-          <div className="rounded-[28px] bg-card px-5 pb-5 pt-5 shadow-sm">
+          <div className="rounded-card bg-card px-5 pb-5 pt-5 shadow-sm">
             {monthlyStats.length > 0 ? (
               <div className="h-[176px] pt-6">
                 <div className="flex h-[128px] items-end justify-between gap-3 border-b border-border/70 px-2 pb-3">
@@ -373,9 +357,9 @@ export default function MyProfilePage() {
             <Icon name="chevron_right" className="text-xl text-muted-foreground/50" />
           </button>
         </section>
-      </main>
+      </ScreenBody>
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }

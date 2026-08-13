@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import type { LibraryBookSummary } from '@/api/library'
-import Icon from '@/components/common/Icon'
 import { toDateKey } from '@/lib/date'
+import StatusMessage from '@/components/ui/StatusMessage'
+import Icon from '@/components/common/Icon'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'] as const
 
@@ -97,17 +98,9 @@ export default function ReadingCalendar({
         </button>
       </div>
 
-      {isLoading && (
-        <p role="status" className="py-10 text-center text-sm text-muted-foreground">
-          독서 기록을 불러오는 중...
-        </p>
-      )}
+      {isLoading && <StatusMessage tone="loading">독서 기록을 불러오는 중...</StatusMessage>}
 
-      {!isLoading && errorMessage && (
-        <p role="alert" className="py-10 text-center text-sm text-destructive">
-          {errorMessage}
-        </p>
-      )}
+      {!isLoading && errorMessage && <StatusMessage tone="error">{errorMessage}</StatusMessage>}
 
       {!isLoading && !errorMessage && (
         <div className="grid grid-cols-7 gap-x-1 gap-y-3">
@@ -151,7 +144,7 @@ export default function ReadingCalendar({
                   ) : null}
 
                   {entry && entry.count > 1 && (
-                    <span className="absolute bottom-0.5 right-0.5 rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                    <span className="absolute bottom-0.5 right-0.5 rounded-full bg-primary px-1.5 text-3xs font-bold text-primary-foreground">
                       {entry.count}
                     </span>
                   )}

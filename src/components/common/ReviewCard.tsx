@@ -130,7 +130,7 @@ function ReviewCard({ review, className }: ReviewCardProps) {
               {status && (
                 <span
                   className={cn(
-                    'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider',
+                    'rounded-full px-3 py-1 text-3xs font-bold uppercase tracking-wider',
                     status.variant === 'solid'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-primary/10 text-primary'
@@ -184,7 +184,7 @@ function ReviewCard({ review, className }: ReviewCardProps) {
                 </h3>
                 <p className="text-sm">{review.book.author}</p>
                 {review.book.category && (
-                  <span className="mt-1.5 w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  <span className="mt-1.5 w-fit rounded-full bg-primary/10 px-2 py-0.5 text-2xs font-medium text-primary">
                     {review.book.category}
                   </span>
                 )}
@@ -250,7 +250,7 @@ function ReviewCard({ review, className }: ReviewCardProps) {
                 liked ? 'text-primary' : 'hover:text-primary'
               )}
             >
-              <Icon name="favorite" className="text-xl" filled={liked} />
+              <Icon name="favorite" filled={liked} className="text-xl" />
               <span className="text-xs font-bold">{likeCount}</span>
             </button>
             <Link

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Button from '@/components/ui/Button'
 import Icon from '@/components/common/Icon'
 
 type CameraStatus =
@@ -331,13 +332,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
                 <p role="alert" className="mb-4 text-sm font-medium">
                   {errorMessage}
                 </p>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-                >
-                  닫기
-                </button>
+                <Button onClick={handleClose}>닫기</Button>
               </div>
             )}
           </div>

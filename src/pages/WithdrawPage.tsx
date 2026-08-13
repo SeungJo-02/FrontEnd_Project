@@ -10,6 +10,9 @@ import { withdrawAccount } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
 import { clearRecentKeywords } from '@/features/search/hooks/useRecentKeywords'
 import { clearFeedCache } from '@/store/feedStore'
+import { Screen } from '@/components/layout/Screen'
+import FieldError from '@/components/ui/FieldError'
+import ErrorBox from '@/components/ui/ErrorBox'
 import {
   Dialog,
   DialogContent,
@@ -92,7 +95,7 @@ export default function WithdrawPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="회원 탈퇴" showBack />
 
       <main className="flex flex-1 flex-col px-6 pb-24 pt-8">
@@ -122,11 +125,7 @@ export default function WithdrawPage() {
               placeholder="본인 확인을 위해 현재 비밀번호를 입력해주세요"
               className={FORM_INPUT_CLASS}
             />
-            {errors.password && (
-              <p role="alert" className="ml-1 text-xs text-destructive">
-                {errors.password.message}
-              </p>
-            )}
+            {errors.password && <FieldError message={errors.password.message} />}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -161,17 +160,7 @@ export default function WithdrawPage() {
             </div>
           </div>
 
-          {errorMessage && (
-            <p
-              ref={errorRef}
-              role="alert"
-              aria-atomic="true"
-              tabIndex={-1}
-              className="rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-            >
-              {errorMessage}
-            </p>
-          )}
+          {errorMessage && <ErrorBox message={errorMessage} />}
 
           <button
             type="submit"
@@ -228,6 +217,6 @@ export default function WithdrawPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Screen>
   )
 }

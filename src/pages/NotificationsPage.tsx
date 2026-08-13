@@ -12,6 +12,11 @@ import {
 import BottomNav from '@/components/layout/BottomNav'
 import { Avatar } from '@/components/common/Avatar'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import StatusMessage from '@/components/ui/StatusMessage'
+import IconButton from '@/components/ui/IconButton'
+import StickyHeader from '@/components/layout/StickyHeader'
+import LoadMoreRetry from '@/components/ui/LoadMoreRetry'
 import Icon, { type IconName } from '@/components/common/Icon'
 
 type TabValue = 'all' | 'unread'
@@ -279,15 +284,12 @@ export default function NotificationsPage() {
   const displayed = activeTab === 'all' ? notifications : unread
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+    <Screen>
+      <StickyHeader>
         <div className="flex h-16 items-center justify-between px-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-          >
+          <IconButton aria-label="뒤로 가기" onClick={() => navigate(-1)}>
             <Icon name="arrow_back" />
-          </button>
+          </IconButton>
           <h1 className="text-xl font-bold tracking-tight text-primary">알림</h1>
           <div className="w-10" />
         </div>
@@ -321,24 +323,14 @@ export default function NotificationsPage() {
             읽지 않음
           </button>
         </div>
-      </header>
+      </StickyHeader>
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <ScreenBody>
         {isLoading && notifications.length === 0 && (
-          <p
-            role="status"
-            aria-busy="true"
-            className="py-10 text-center text-sm text-muted-foreground"
-          >
-            불러오는 중...
-          </p>
+          <StatusMessage tone="loading">불러오는 중...</StatusMessage>
         )}
 
-        {!isLoading && errorMessage && (
-          <p role="alert" className="py-10 text-center text-sm text-destructive">
-            {errorMessage}
-          </p>
-        )}
+        {!isLoading && errorMessage && <StatusMessage tone="error">{errorMessage}</StatusMessage>}
 
         {!isLoading && !errorMessage && notifications.length === 0 && (
           <EmptyState icon="notifications_off" message="알림이 없습니다" />
@@ -348,7 +340,7 @@ export default function NotificationsPage() {
           <>
             {unread.length > 0 && (
               <div className="bg-primary/5 px-4 py-3">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest">New</p>
+                <p className="mb-2 text-3xs font-bold uppercase tracking-widest">New</p>
                 {unread.map(noti => (
                   <NotificationRow
                     key={noti.notificationId}
@@ -361,7 +353,7 @@ export default function NotificationsPage() {
             )}
             {read.length > 0 && (
               <div className="px-4 py-3">
-                <p className="mb-4 text-[10px] font-bold uppercase tracking-widest">Earlier</p>
+                <p className="mb-4 text-3xs font-bold uppercase tracking-widest">Earlier</p>
                 {read.map(noti => (
                   <NotificationRow
                     key={noti.notificationId}
@@ -407,35 +399,26 @@ export default function NotificationsPage() {
             {hasNext && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
 
             {isLoadingMore && (
-              <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
+              <StatusMessage tone="hint" compact>
+                더 불러오는 중...
+              </StatusMessage>
             )}
 
             {loadMoreError && !isLoadingMore && (
-              <div className="flex flex-col items-center gap-2 py-4">
-                <p role="alert" className="text-sm text-destructive">
-                  {loadMoreError}
-                </p>
-                <button
-                  type="button"
-                  onClick={retryLoadMore}
-                  className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
-                >
-                  다시 불러오기
-                </button>
-              </div>
+              <LoadMoreRetry message={loadMoreError} onRetry={retryLoadMore} />
             )}
 
             {!hasNext && !isLoadingMore && !loadMoreError && (
-              <p className="py-4 text-center text-xs text-muted-foreground/50">
+              <StatusMessage tone="hint" compact className="text-muted-foreground/50">
                 모든 알림을 확인했습니다
-              </p>
+              </StatusMessage>
             )}
           </>
         )}
-      </main>
+      </ScreenBody>
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }
 

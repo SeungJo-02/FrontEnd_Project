@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import UserSearchCard from '@/components/common/UserSearchCard'
 import type { BookSearchItem, UserSearchItem } from '@/api/search'
+import StatusMessage from '@/components/ui/StatusMessage'
 import Icon from '@/components/common/Icon'
 
 interface AllTabContentProps {
@@ -33,19 +34,11 @@ export default function AllTabContent({
   onCommit,
 }: AllTabContentProps) {
   if (isLoading && books.length === 0 && users.length === 0) {
-    return (
-      <p role="status" aria-busy="true" className="py-10 text-center text-sm text-muted-foreground">
-        검색 중...
-      </p>
-    )
+    return <StatusMessage tone="loading">검색 중...</StatusMessage>
   }
 
   if (!isLoading && errorMessage) {
-    return (
-      <p role="alert" className="py-10 text-center text-sm text-destructive">
-        {errorMessage}
-      </p>
-    )
+    return <StatusMessage tone="error">{errorMessage}</StatusMessage>
   }
 
   if (!isLoading && books.length === 0 && users.length === 0) {

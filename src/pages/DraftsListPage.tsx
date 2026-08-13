@@ -6,6 +6,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import { EmptyState } from '@/components/common/EmptyState'
 import { deleteReview, getMyReviews, REVIEW_PAGE_SIZE, type ReviewListItem } from '@/api/review'
 import { formatRelativeTime } from '@/lib/utils'
+import { Screen } from '@/components/layout/Screen'
 import Icon from '@/components/common/Icon'
 
 /**
@@ -108,7 +109,7 @@ export default function DraftsListPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="임시저장" showBack />
 
       <main className="flex-1 overflow-y-auto px-6 pb-24 pt-6">
@@ -120,7 +121,7 @@ export default function DraftsListPage() {
           <EmptyState
             icon="draft"
             message="임시저장한 감상이 없습니다"
-            className="rounded-[24px] bg-card py-16 shadow-sm"
+            className="rounded-tile bg-card py-16 shadow-sm"
           >
             <p className="text-xs text-muted-foreground/60">
               감상 작성 중 임시저장하면 여기에 보관돼요
@@ -129,14 +130,14 @@ export default function DraftsListPage() {
         ) : (
           <div className="space-y-4">
             {drafts.map(draft => (
-              <div key={draft.reviewId} className="flex gap-4 rounded-[24px] bg-card p-4 shadow-sm">
+              <div key={draft.reviewId} className="flex gap-4 rounded-tile bg-card p-4 shadow-sm">
                 <button
                   type="button"
                   onClick={() => navigate(`/review/${draft.reviewId}/edit`)}
                   className="flex min-w-0 flex-1 gap-4 text-left transition-opacity hover:opacity-80"
                   aria-label={`${draft.book.title} 임시저장 이어쓰기`}
                 >
-                  <div className="flex h-[96px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-primary/5">
+                  <div className="flex h-[96px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-control bg-primary/5">
                     {draft.book.coverImageUrl ? (
                       <img
                         src={draft.book.coverImageUrl}
@@ -201,6 +202,6 @@ export default function DraftsListPage() {
       </main>
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }

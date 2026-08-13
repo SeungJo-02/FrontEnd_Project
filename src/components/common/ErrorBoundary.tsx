@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import Button from '@/components/ui/Button'
 import Icon from '@/components/common/Icon'
 
 interface ErrorBoundaryProps {
@@ -49,13 +50,12 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
         <p className="text-sm text-muted-foreground">
           예상치 못한 오류로 화면을 표시할 수 없습니다. 잠시 후 다시 시도해주세요.
         </p>
-        <button
-          type="button"
+        <Button
+          className="mt-2 transition-transform active:scale-[0.98]"
           onClick={this.handleReload}
-          className="mt-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-transform active:scale-[0.98]"
         >
           다시 시도
-        </button>
+        </Button>
       </div>
     )
   }

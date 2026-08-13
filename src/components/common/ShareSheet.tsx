@@ -92,7 +92,7 @@ function SheetRow({
       className="flex items-center gap-4 rounded-xl px-4 py-3.5 text-left transition-colors hover:bg-primary/5 disabled:opacity-50"
     >
       <Icon name={icon} className="text-[22px] text-foreground/70" />
-      <span className="text-[15px] font-medium">{label}</span>
+      <span className="text-md font-medium">{label}</span>
     </button>
   )
 }

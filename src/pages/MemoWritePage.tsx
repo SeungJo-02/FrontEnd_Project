@@ -5,6 +5,9 @@ import OcrInputMethodSheet from '@/components/ocr/OcrInputMethodSheet'
 import OcrTextSelector from '@/components/ocr/OcrTextSelector'
 import { fileToSquareDataUrl, ImageProcessingError } from '@/lib/image'
 import { getMemo, saveMemo, MemoStorageError } from '@/lib/memoStore'
+import { Screen } from '@/components/layout/Screen'
+import IconButton from '@/components/ui/IconButton'
+import ErrorBox from '@/components/ui/ErrorBox'
 import Icon from '@/components/common/Icon'
 
 /** OCR 원본 업로드 상한. WriteReviewPage와 동일 기준. */
@@ -131,27 +134,17 @@ export default function MemoWritePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/80 px-2 py-3 backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="이전 페이지로 돌아가기"
-          className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-        >
+        <IconButton onClick={() => navigate(-1)} aria-label="이전 페이지로 돌아가기">
           <Icon name="arrow_back_ios_new" />
-        </button>
+        </IconButton>
 
         <h1 className="text-lg font-bold tracking-tight">메모</h1>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          aria-label="메모 저장"
-          className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-        >
+        <IconButton onClick={handleSave} aria-label="메모 저장">
           <Icon name="check" />
-        </button>
+        </IconButton>
       </header>
 
       <main className="flex flex-1 flex-col px-4 pb-10 pt-4">
@@ -207,17 +200,10 @@ export default function MemoWritePage() {
           value={content}
           onChange={e => setContent(e.target.value)}
           placeholder="기억하고 싶은 문장이나 생각을 남겨보세요"
-          className="min-h-[45vh] flex-1 resize-none rounded-2xl border-none bg-card px-5 py-4 text-[15px] leading-7 shadow-sm outline-none transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+          className="min-h-[45vh] flex-1 resize-none rounded-2xl border-none bg-card px-5 py-4 text-md leading-7 shadow-sm outline-none transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
         />
 
-        {errorMessage && (
-          <p
-            role="alert"
-            className="mt-4 rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-          >
-            {errorMessage}
-          </p>
-        )}
+        {errorMessage && <ErrorBox message={errorMessage} className="mt-4" />}
       </main>
 
       <OcrInputMethodSheet
@@ -235,6 +221,6 @@ export default function MemoWritePage() {
           onClose={() => setOcrResult(null)}
         />
       )}
-    </div>
+    </Screen>
   )
 }

@@ -10,6 +10,9 @@ import BottomNav from '@/components/layout/BottomNav'
 import OcrInputMethodSheet from '@/components/ocr/OcrInputMethodSheet'
 import OcrTextSelector from '@/components/ocr/OcrTextSelector'
 import { useAuthStore } from '@/store/authStore'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import Button from '@/components/ui/Button'
+import IconButton from '@/components/ui/IconButton'
 import Icon from '@/components/common/Icon'
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
@@ -350,21 +353,21 @@ export default function WriteReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title={isEditMode ? '감상 수정' : '감상 작성'} showBack />
-        <main aria-busy="true" className="flex flex-1 items-center justify-center pb-24">
+        <ScreenBody centered aria-busy="true">
           <p role="status" className="text-sm text-muted-foreground">
             불러오는 중...
           </p>
-        </main>
+        </ScreenBody>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   if (loadErrorMessage || !book) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title={isEditMode ? '감상 수정' : '감상 작성'} showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 px-8 pb-24">
           <Icon name="search_off" className="text-6xl text-muted-foreground/30" />
@@ -372,38 +375,31 @@ export default function WriteReviewPage() {
           <p role="alert" className="max-w-[280px] text-center text-sm text-muted-foreground">
             {loadErrorMessage ?? '도서 정보를 불러올 수 없습니다.'}
           </p>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
-            돌아가기
-          </button>
+          <Button onClick={() => navigate(-1)}>돌아가기</Button>
         </main>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader
         title={isEditMode ? '감상 수정' : '감상 작성'}
         showBack
         rightAction={
-          <button
-            type="button"
+          <IconButton
+            className="disabled:opacity-50"
             onClick={() => handleSubmit('PUBLISHED')}
             disabled={submittingStatus !== null}
             aria-label={isEditMode ? '수정하기' : '게시하기'}
-            className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
           >
             <Icon name="check" />
-          </button>
+          </IconButton>
         }
       />
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <ScreenBody>
         {/* Book Info */}
         <section className="px-6 py-6">
           <div className="flex items-center gap-4">
@@ -491,7 +487,7 @@ export default function WriteReviewPage() {
             onChange={e => setReviewText(e.target.value)}
             maxLength={500}
             placeholder="이 책에 대한 감상을 자유롭게 적어보세요...."
-            className="min-h-[300px] w-full resize-none rounded-2xl border-none bg-card px-5 py-4 text-[15px] leading-7 shadow-sm outline-none transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
+            className="min-h-[300px] w-full resize-none rounded-2xl border-none bg-card px-5 py-4 text-md leading-7 shadow-sm outline-none transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
           />
         </section>
 
@@ -682,7 +678,7 @@ export default function WriteReviewPage() {
             </button>
           </div>
         </section>
-      </main>
+      </ScreenBody>
 
       <BottomNav />
 
@@ -727,6 +723,6 @@ export default function WriteReviewPage() {
           onClose={() => setOcrResult(null)}
         />
       )}
-    </div>
+    </Screen>
   )
 }

@@ -28,6 +28,10 @@ import {
 import CommentSection from '@/components/comment/CommentSection'
 import ReportDialog from '@/components/common/ReportDialog'
 import { useAuthStore } from '@/store/authStore'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import Button from '@/components/ui/Button'
+import IconButton from '@/components/ui/IconButton'
+import ErrorBox from '@/components/ui/ErrorBox'
 import Icon, { type IconName } from '@/components/common/Icon'
 
 const readingStatusLabel: Record<ReadingStatus, string> = {
@@ -106,23 +110,23 @@ export default function ReviewDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="감상" showBack />
 
-        <main aria-busy="true" className="flex flex-1 items-center justify-center pb-24">
+        <ScreenBody centered aria-busy="true">
           <p role="status" className="text-sm text-muted-foreground">
             불러오는 중...
           </p>
-        </main>
+        </ScreenBody>
 
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   if (errorMessage || !review) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="감상" showBack />
 
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
@@ -133,16 +137,11 @@ export default function ReviewDetailPage() {
               {errorMessage}
             </p>
           )}
-          <button
-            onClick={() => navigate(-1)}
-            className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
-            돌아가기
-          </button>
+          <Button onClick={() => navigate(-1)}>돌아가기</Button>
         </main>
 
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
@@ -200,19 +199,14 @@ export default function ReviewDetailPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader
         title="감상"
         showBack
         rightAction={
-          <button
-            type="button"
-            onClick={() => setIsMoreSheetOpen(true)}
-            aria-label="더보기"
-            className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-          >
+          <IconButton onClick={() => setIsMoreSheetOpen(true)} aria-label="더보기">
             <Icon name="more_horiz" />
-          </button>
+          </IconButton>
         }
       />
 
@@ -248,7 +242,7 @@ export default function ReviewDetailPage() {
               </p>
             </div>
 
-            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-2xs font-bold text-primary">
               {reviewStatus}
             </span>
           </header>
@@ -295,7 +289,7 @@ export default function ReviewDetailPage() {
 
           {/* 포스트 본문 — 감상 글이 주인공 */}
           <div className="px-4 pb-1">
-            <div className="space-y-4 text-[15px] leading-7 text-foreground/90">
+            <div className="space-y-4 text-md leading-7 text-foreground/90">
               {review.content.split('\n\n').map((paragraph, index) => (
                 <p key={index}>{paragraph}</p>
               ))}
@@ -304,7 +298,7 @@ export default function ReviewDetailPage() {
             {review.quote && (
               <blockquote className="mt-4 rounded-2xl bg-primary/5 px-4 py-4">
                 <Icon name="format_quote" className="text-[26px] leading-none text-primary/25" />
-                <p className="mt-1 border-l-[3px] border-primary/60 pl-3 text-[15px] italic leading-7 text-foreground/85">
+                <p className="mt-1 border-l-[3px] border-primary/60 pl-3 text-md italic leading-7 text-foreground/85">
                   {review.quote}
                 </p>
               </blockquote>
@@ -336,7 +330,7 @@ export default function ReviewDetailPage() {
                 liked ? 'text-red-500' : 'text-foreground hover:text-red-500'
               )}
             >
-              <Icon name="favorite" className="text-[26px]" filled={liked} />
+              <Icon name="favorite" filled={liked} className="text-[26px]" />
             </button>
 
             <button
@@ -373,7 +367,7 @@ export default function ReviewDetailPage() {
                   savedStatus ? 'text-primary' : 'text-foreground hover:text-primary'
                 )}
               >
-                <Icon name="bookmark" className="text-[26px]" filled={Boolean(savedStatus)} />
+                <Icon name="bookmark" filled={Boolean(savedStatus)} className="text-[26px]" />
               </button>
             )}
           </div>
@@ -489,14 +483,7 @@ export default function ReviewDetailPage() {
               삭제한 감상은 되돌릴 수 없습니다. 이 책에 대한 감상 기록이 사라집니다.
             </DialogDescription>
           </DialogHeader>
-          {deleteErrorMessage && (
-            <p
-              role="alert"
-              className="rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-            >
-              {deleteErrorMessage}
-            </p>
-          )}
+          {deleteErrorMessage && <ErrorBox message={deleteErrorMessage} />}
           <DialogFooter className="gap-2">
             <button
               type="button"
@@ -535,7 +522,7 @@ export default function ReviewDetailPage() {
       )}
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }
 
@@ -561,7 +548,7 @@ function MoreRow({
       )}
     >
       <Icon name={icon} className="text-[22px]" />
-      <span className="text-[15px] font-medium">{label}</span>
+      <span className="text-md font-medium">{label}</span>
     </button>
   )
 }

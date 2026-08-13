@@ -7,6 +7,9 @@ import AppHeader from '@/components/layout/AppHeader'
 import { changePassword } from '@/api/member'
 import { PASSWORD_HINT, PASSWORD_REGEX } from '@/constants/validation'
 import { FORM_INPUT_CLASS } from '@/constants/form'
+import { Screen } from '@/components/layout/Screen'
+import FieldError from '@/components/ui/FieldError'
+import ErrorBox from '@/components/ui/ErrorBox'
 import Icon from '@/components/common/Icon'
 
 const PASSWORD_MAX_LENGTH = 64
@@ -67,7 +70,7 @@ export default function PasswordChangePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="비밀번호 변경" showBack />
 
       <main className="flex flex-1 flex-col px-6 pt-12">
@@ -111,11 +114,7 @@ export default function PasswordChangePage() {
                   placeholder="현재 비밀번호를 입력해주세요"
                   className={FORM_INPUT_CLASS}
                 />
-                {errors.currentPassword && (
-                  <p role="alert" className="ml-1 text-xs text-destructive">
-                    {errors.currentPassword.message}
-                  </p>
-                )}
+                {errors.currentPassword && <FieldError message={errors.currentPassword.message} />}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -132,11 +131,7 @@ export default function PasswordChangePage() {
                   aria-describedby="password-hint"
                   className={FORM_INPUT_CLASS}
                 />
-                {errors.newPassword && (
-                  <p role="alert" className="ml-1 text-xs text-destructive">
-                    {errors.newPassword.message}
-                  </p>
-                )}
+                {errors.newPassword && <FieldError message={errors.newPassword.message} />}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -152,26 +147,14 @@ export default function PasswordChangePage() {
                   placeholder="비밀번호를 다시 입력해주세요"
                   className={FORM_INPUT_CLASS}
                 />
-                {errors.confirmPassword && (
-                  <p role="alert" className="ml-1 text-xs text-destructive">
-                    {errors.confirmPassword.message}
-                  </p>
-                )}
+                {errors.confirmPassword && <FieldError message={errors.confirmPassword.message} />}
               </div>
 
               <p id="password-hint" className="ml-1 text-xs text-muted-foreground">
                 {PASSWORD_HINT}
               </p>
 
-              {errorMessage && (
-                <p
-                  role="alert"
-                  aria-atomic="true"
-                  className="rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-                >
-                  {errorMessage}
-                </p>
-              )}
+              {errorMessage && <ErrorBox message={errorMessage} />}
 
               <button
                 type="submit"
@@ -184,6 +167,6 @@ export default function PasswordChangePage() {
           </>
         )}
       </main>
-    </div>
+    </Screen>
   )
 }

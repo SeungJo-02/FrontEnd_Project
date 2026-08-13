@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { isCarouselSeen, markCarouselSeen } from '@/lib/onboarding'
 import { useAuthStore } from '@/store/authStore'
+import { Screen } from '@/components/layout/Screen'
 import Icon, { type IconName } from '@/components/common/Icon'
 
 const slides = [
@@ -75,7 +76,7 @@ export default function OnboardingPage() {
   const isLastStep = step === slides.length - 1
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <Screen className="text-foreground">
       {/* Header */}
       <header className="flex items-center justify-between p-6">
         <h1 className="text-2xl font-bold tracking-tight text-primary">Shelfeed</h1>
@@ -134,6 +135,6 @@ export default function OnboardingPage() {
         </button>
         <div className="h-4" />
       </footer>
-    </div>
+    </Screen>
   )
 }

@@ -1,26 +1,35 @@
 import type { BookListItemData } from '@/components/common/BookListItem'
 import type { ReviewCardData } from '@/components/common/ReviewCard'
+import {
+  AVATAR_BOOKLOVER,
+  AVATAR_BOOKTRACKER,
+  AVATAR_BOOKWORM,
+  AVATAR_DAWN,
+  AVATAR_LITERARYBOY,
+  AVATAR_WISEFOREST,
+  initialAvatar,
+} from '@/mocks/avatars'
 
 // 유저 Mock 데이터
 export const mockUsers = [
   {
     id: 1,
     nickname: '독서광',
-    profileImageUrl: 'https://picsum.photos/seed/user1/100/100',
+    profileImageUrl: AVATAR_BOOKLOVER,
     followerCount: 120,
     followingCount: 85,
   },
   {
     id: 2,
     nickname: '책벌레지니',
-    profileImageUrl: 'https://picsum.photos/seed/user2/100/100',
+    profileImageUrl: AVATAR_BOOKWORM,
     followerCount: 340,
     followingCount: 210,
   },
   {
     id: 3,
     nickname: '문학소년',
-    profileImageUrl: 'https://picsum.photos/seed/user3/100/100',
+    profileImageUrl: AVATAR_LITERARYBOY,
     followerCount: 95,
     followingCount: 60,
   },
@@ -161,7 +170,8 @@ export const mockBookDetailReviews: ReviewCardData[] = [
     content:
       '인생의 수많은 선택지들에 대해 다시 생각해보게 된 책이었어요. 문장 하나하나가 위로가 되네요...',
     book: mockBooks[3],
-    author: { ...mockUsers[0], nickname: '지혜로운숲' },
+    // 닉네임만 바꾸면 앞 사람의 아바타를 그대로 물려받는다 — 사진도 함께 갈아준다.
+    author: { ...mockUsers[0], nickname: '지혜로운숲', profileImageUrl: AVATAR_WISEFOREST },
     likeCount: 32,
     isLiked: false,
     createdAt: '1일 전',
@@ -175,7 +185,7 @@ export const mockBookDetailReviews: ReviewCardData[] = [
     content:
       '결말 부분에서 주인공이 결국 자신의 원래 삶을 선택하는 장면이 정말 감동적이었어요. 도서관 사서와의 대화가 신의 한 수...',
     book: mockBooks[3],
-    author: { ...mockUsers[1], nickname: '북트래커' },
+    author: { ...mockUsers[1], nickname: '북트래커', profileImageUrl: AVATAR_BOOKTRACKER },
     likeCount: 18,
     isLiked: false,
     createdAt: '2일 전',
@@ -189,7 +199,7 @@ export const mockBookDetailReviews: ReviewCardData[] = [
     content:
       '우울할 때 읽으면 정말 좋은 책입니다. 판타지적인 설정도 흥미롭고 철학적인 질문들도 좋았습니다.',
     book: mockBooks[3],
-    author: { ...mockUsers[2], nickname: '새벽감성' },
+    author: { ...mockUsers[2], nickname: '새벽감성', profileImageUrl: AVATAR_DAWN },
     likeCount: 27,
     isLiked: false,
     createdAt: '3일 전',
@@ -206,7 +216,7 @@ export const mockNotifications = [
     id: 1,
     type: 'like' as const,
     senderNickname: '김지우',
-    senderProfileImageUrl: 'https://picsum.photos/seed/noti1/100/100',
+    senderProfileImageUrl: initialAvatar('김지우', 'hsl(34, 37%, 54%)'),
     message: '님이 회원님의 감상에 좋아요를 눌렀습니다.',
     isRead: false,
     createdAt: '2시간 전',
@@ -215,7 +225,7 @@ export const mockNotifications = [
     id: 2,
     type: 'comment' as const,
     senderNickname: '이민호',
-    senderProfileImageUrl: 'https://picsum.photos/seed/noti2/100/100',
+    senderProfileImageUrl: initialAvatar('이민호', 'hsl(150, 26%, 42%)'),
     message: '님이 회원님의 감상에 댓글을 남겼습니다.',
     isRead: false,
     createdAt: '5시간 전',
@@ -224,7 +234,7 @@ export const mockNotifications = [
     id: 3,
     type: 'follow' as const,
     senderNickname: '박서연',
-    senderProfileImageUrl: 'https://picsum.photos/seed/noti3/100/100',
+    senderProfileImageUrl: initialAvatar('박서연', 'hsl(212, 30%, 50%)'),
     message: '님이 회원님을 팔로우하기 시작했습니다.',
     isRead: true,
     createdAt: '어제',
@@ -233,7 +243,7 @@ export const mockNotifications = [
     id: 4,
     type: 'new_review' as const,
     senderNickname: '최준혁',
-    senderProfileImageUrl: 'https://picsum.photos/seed/noti4/100/100',
+    senderProfileImageUrl: initialAvatar('최준혁', 'hsl(18, 45%, 52%)'),
     message: '님이 새로운 감상을 올렸습니다.',
     isRead: true,
     createdAt: '어제',
@@ -243,7 +253,7 @@ export const mockNotifications = [
     id: 5,
     type: 'like' as const,
     senderNickname: '윤아름',
-    senderProfileImageUrl: 'https://picsum.photos/seed/noti5/100/100',
+    senderProfileImageUrl: initialAvatar('윤아름', 'hsl(272, 26%, 52%)'),
     message: '님이 회원님의 감상에 좋아요를 눌렀습니다.',
     isRead: true,
     createdAt: '2일 전',

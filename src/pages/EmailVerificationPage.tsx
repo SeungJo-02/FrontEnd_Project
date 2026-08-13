@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { verifyEmail, resendEmailCode } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { isCarouselSeen } from '@/lib/onboarding'
+import { Screen } from '@/components/layout/Screen'
+import IconButton from '@/components/ui/IconButton'
 import Icon from '@/components/common/Icon'
 
 // 진입 경로별로 EmailVerificationPage가 다른 탈출 UI를 노출하기 위한 식별자.
@@ -133,19 +135,14 @@ export default function EmailVerificationPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       {/* AppHeader 대신 자체 헤더: AppHeader의 우측 rightAction 슬롯이 w-10으로 고정되어 "건너뛰기" 텍스트가 잘리므로 grid 3분할 직접 구성 */}
       <header className="grid grid-cols-3 items-center border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
         <div className="flex justify-start">
           {!fromSignup && (
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              aria-label="이전 페이지로 돌아가기"
-              className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-            >
+            <IconButton onClick={() => navigate(-1)} aria-label="이전 페이지로 돌아가기">
               <Icon name="arrow_back" />
-            </button>
+            </IconButton>
           )}
         </div>
         <h1 className="text-center text-xl font-bold tracking-tight text-primary">Shelfeed</h1>
@@ -230,6 +227,6 @@ export default function EmailVerificationPage() {
           </button>
         </p>
       </main>
-    </div>
+    </Screen>
   )
 }

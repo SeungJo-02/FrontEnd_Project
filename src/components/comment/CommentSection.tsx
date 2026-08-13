@@ -14,6 +14,8 @@ import {
 } from '@/api/comment'
 import ReportDialog from '@/components/common/ReportDialog'
 import { Avatar } from '@/components/common/Avatar'
+import StatusMessage from '@/components/ui/StatusMessage'
+import Button from '@/components/ui/Button'
 import Icon from '@/components/common/Icon'
 
 interface CommentSectionProps {
@@ -415,7 +417,9 @@ export default function CommentSection({
       {hasNext && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
 
       {isLoadingMore && (
-        <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
+        <StatusMessage tone="hint" compact>
+          더 불러오는 중...
+        </StatusMessage>
       )}
 
       {loadMoreError && !isLoadingMore && (
@@ -423,16 +427,16 @@ export default function CommentSection({
           <p role="alert" className="text-sm text-destructive">
             {loadMoreError}
           </p>
-          <button
-            type="button"
+          <Button
+            variant="soft"
+            size="sm"
             onClick={() => {
               setLoadMoreError(null)
               fetchMore()
             }}
-            className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
           >
             다시 불러오기
-          </button>
+          </Button>
         </div>
       )}
     </section>
@@ -602,20 +606,15 @@ function CommentRow({
             type="button"
             onClick={goToProfile}
             aria-label={`${user.nickname}님의 프로필 보기`}
-            className="size-8 shrink-0 overflow-hidden rounded-full bg-primary/10 transition-opacity hover:opacity-80"
+            className="size-8 shrink-0 rounded-full transition-opacity hover:opacity-80"
           >
-            {user.profileImageUrl ? (
-              <img
-                src={user.profileImageUrl}
-                alt={user.nickname}
-                loading="lazy"
-                className="size-full object-cover"
-              />
-            ) : (
-              <div className="flex size-full items-center justify-center">
-                <Icon name="person" className="text-[16px] text-primary/40" />
-              </div>
-            )}
+            {/* 사진 유무 분기는 Avatar가 담당한다 — 댓글에서도 자동 아바타를 그대로 쓰기 위해 위임 */}
+            <Avatar
+              src={user.profileImageUrl}
+              alt={user.nickname}
+              className="size-8"
+              iconClassName="text-[16px]"
+            />
           </button>
         ) : (
           <Avatar className="size-8 shrink-0" iconClassName="text-[16px]" />
@@ -663,7 +662,7 @@ function CommentRow({
                   comment.isLiked ? 'text-red-500' : 'hover:text-foreground'
                 )}
               >
-                <Icon name="favorite" className="text-[14px]" filled={comment.isLiked} />
+                <Icon name="favorite" filled={comment.isLiked} className="text-[14px]" />
                 {comment.likeCount > 0 && <span>{comment.likeCount}</span>}
               </button>
             )}

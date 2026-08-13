@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { Link, isRouteErrorResponse, useRouteError } from 'react-router-dom'
+import { buttonVariants } from '@/components/ui/buttonVariants'
+import { cn } from '@/lib/utils'
 import Icon from '@/components/common/Icon'
 
 /**
@@ -37,7 +39,8 @@ export default function RouteError() {
       </p>
       <Link
         to="/"
-        className="mt-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-transform active:scale-[0.98]"
+        // 버튼처럼 보이지만 실제로는 이동 링크라 <Button> 대신 같은 스타일만 빌려 쓴다.
+        className={cn(buttonVariants(), 'mt-2 transition-transform active:scale-[0.98]')}
       >
         홈으로 가기
       </Link>

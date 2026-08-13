@@ -25,18 +25,18 @@ export default function StarRating({ rating, size = 'md', className }: StarRatin
     <div className={cn('flex gap-0.5', className)}>
       {Array.from({ length: fullStars }).map((_, i) => (
         <Icon
-          key={`full-${i}`}
           name="star"
           filled
           className={cn('text-accent-gold', sizeMap[size])}
+          key={`full-${i}`}
         />
       ))}
       {hasHalf && <Icon name="star_half" className={cn('text-accent-gold', sizeMap[size])} />}
       {Array.from({ length: emptyStars }).map((_, i) => (
         <Icon
-          key={`empty-${i}`}
           name="star"
           className={cn('text-muted-foreground/30', sizeMap[size])}
+          key={`empty-${i}`}
         />
       ))}
     </div>

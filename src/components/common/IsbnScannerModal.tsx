@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { createBarcodeDecoder } from '@/lib/barcodeDecoder'
 import { isMobile } from '@/lib/device'
+import Button from '@/components/ui/Button'
 import Icon from '@/components/common/Icon'
 
 const DEVICE_ID_KEY = 'shelfeed-scan-device-id'
@@ -574,13 +575,7 @@ export default function IsbnScannerModal({
             <p role="alert" className="mb-4 text-sm font-medium">
               {errorMessage}
             </p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-            >
-              직접 입력하기
-            </button>
+            <Button onClick={onClose}>직접 입력하기</Button>
           </div>
         )}
       </div>

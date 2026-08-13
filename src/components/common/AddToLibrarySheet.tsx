@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ReadingStatus } from '@/api/library'
 import BottomSheet from './BottomSheet'
-import Icon from './Icon'
 import { cn } from '@/lib/utils'
 import { READING_STATUS_META, READING_STATUS_ORDER } from '@/constants/library'
+import ErrorBox from '@/components/ui/ErrorBox'
 import {
   getReadingProgress,
   saveReadingProgress,
   type ProgressUnit,
 } from '@/lib/readingProgressStore'
+import Icon from '@/components/common/Icon'
 
 interface AddToLibrarySheetProps {
   isOpen: boolean
@@ -156,7 +157,7 @@ export default function AddToLibrarySheet({
                 <span className="text-sm font-bold">{meta.label}</span>
                 <span
                   className={cn(
-                    'text-[11px]',
+                    'text-2xs',
                     isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
                   )}
                 >
@@ -248,7 +249,7 @@ export default function AddToLibrarySheet({
           </div>
         </div>
 
-        <p className="mb-7 text-[11px] leading-5 text-muted-foreground/70">
+        <p className="mb-7 text-2xs leading-5 text-muted-foreground/70">
           {isFinished
             ? '읽은 책은 끝까지 읽은 것으로 기록됩니다 · 이 기기에만 저장'
             : maxAmount != null
@@ -256,15 +257,7 @@ export default function AddToLibrarySheet({
               : '시작일과 독서량은 이 기기에만 저장됩니다'}
         </p>
 
-        {saveError && (
-          <p
-            role="alert"
-            aria-atomic="true"
-            className="mb-4 rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-          >
-            {saveError}
-          </p>
-        )}
+        {saveError && <ErrorBox message={saveError} className="mb-4" />}
 
         <button
           onClick={handleSave}
