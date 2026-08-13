@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
-import { searchBooks, type BookSummary } from '@/api/book'
+import { getBooksByGenre, searchBooks, type BookSummary } from '@/api/book'
 import { getMyProfile } from '@/api/member'
 import type { Genre } from '@/api/genre'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -11,8 +11,8 @@ import Icon from '@/components/common/Icon'
 
 /** 한 번에 보여줄 추천 책 수. 가로 스크롤 한 화면에 적당한 양. */
 const BOOK_COUNT = 8
-/** 무작위로 고를 검색 페이지 범위. 너무 뒤로 가면 결과가 비어 1페이지로 되돌아온다. */
-const PAGE_RANGE = 4
+/** 무작위로 고를 페이지 범위. 장르당 후보가 수백 권이라 이 폭 안에서는 대체로 결과가 찬다. */
+const PAGE_RANGE = 8
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)]
@@ -26,23 +26,33 @@ function isSameBooks(a: BookSummary[], b: BookSummary[]): boolean {
 /**
  * 관심 장르 중 하나를 골라 그 장르의 책을 가져온다.
  *
- * 장르·검색어·페이지를 매번 다시 뽑아, 화면을 볼 때마다 다른 책이 걸리도록 한다.
+ * 장르와 페이지를 매번 다시 뽑아, 화면을 볼 때마다 다른 책이 걸리도록 한다.
  * 항상 첫 장르·첫 페이지만 보면 여러 장르를 골라둔 의미도 없고 화면이 늘 똑같다.
+ *
+ * 장르 조회(`/books/by-genre`)는 저장된 도서를 알라딘 카테고리로 추리므로 후보가 넉넉하다
+ * ('만화/라이트노벨' 301권). 그래도 비면 예전 방식인 장르명 검색으로 한 번 물러선다 —
+ * 아직 그 장르의 책이 쌓이지 않은 경우를 위한 것이고, 상태를 남기지 않아 다음 호출은
+ * 다시 장르 조회부터 시작한다.
  */
 async function loadRecommendedBooks(
   genres: Genre[],
   signal: AbortSignal
 ): Promise<{ genre: Genre; books: BookSummary[] }> {
   const genre = pickRandom(genres)
-  const keyword = pickRandom(keywordsFor(genre.name))
   const page = 1 + Math.floor(Math.random() * PAGE_RANGE)
 
-  const result = await searchBooks(keyword, BOOK_COUNT, page, signal)
-  if (result.content.length > 0) return { genre, books: result.content }
+  const byGenre = await getBooksByGenre(genre.genreId, BOOK_COUNT, page, signal)
+  if (byGenre.content.length > 0) return { genre, books: byGenre.content }
 
-  // 뒤쪽 페이지에는 결과가 없을 수 있다 — 빈손으로 두지 말고 첫 페이지로 되돌아간다.
-  const firstPage = await searchBooks(keyword, BOOK_COUNT, 1, signal)
-  return { genre, books: firstPage.content }
+  // 뒤쪽 페이지가 범위를 넘었을 수 있다 — 빈손으로 두지 말고 첫 페이지로 되돌아간다.
+  if (byGenre.totalElements > 0) {
+    const firstPage = await getBooksByGenre(genre.genreId, BOOK_COUNT, 1, signal)
+    if (firstPage.content.length > 0) return { genre, books: firstPage.content }
+  }
+
+  const keyword = pickRandom(keywordsFor(genre.name))
+  const searched = await searchBooks(keyword, BOOK_COUNT, 1, signal)
+  return { genre, books: searched.content }
 }
 
 /**
@@ -52,8 +62,8 @@ async function loadRecommendedBooks(
  * 띄우면 여기서 할 수 있는 게 없다. 온보딩에서 고른 관심 장르로 책을 찾아 보여주고
  * 감상 쓰기·사람 찾기로 이어준다.
  *
- * 책 추천은 장르 이름을 검색어로 쓰는 어림짐작이다. 서버가 관심 장르 기반 추천 감상을
- * 내려주기 시작하면(`docs/통합_피드_API_명세.md`) 피드 자체가 채워지므로 이 화면은
+ * 책 추천은 장르의 알라딘 카테고리로 저장된 도서를 추린다. 서버가 관심 장르 기반 추천
+ * 감상을 내려주기 시작하면(`docs/통합_피드_API_명세.md`) 피드 자체가 채워지므로 이 화면은
  * 감상이 정말 없을 때만 남는다.
  */
 export default function EmptyFeedGuide() {
