@@ -6,6 +6,7 @@ import { getMyProfile } from '@/api/member'
 import type { Genre } from '@/api/genre'
 import { EmptyState } from '@/components/common/EmptyState'
 import { cn } from '@/lib/utils'
+import { keywordsFor } from './genreKeywords'
 import Icon from '@/components/common/Icon'
 
 /** 한 번에 보여줄 추천 책 수. 가로 스크롤 한 화면에 적당한 양. */
@@ -17,10 +18,15 @@ function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)]
 }
 
+/** 두 목록이 같은 책을 같은 순서로 담고 있는지. */
+function isSameBooks(a: BookSummary[], b: BookSummary[]): boolean {
+  return a.length === b.length && a.every((book, i) => book.bookId === b[i].bookId)
+}
+
 /**
  * 관심 장르 중 하나를 골라 그 장르의 책을 가져온다.
  *
- * 장르와 페이지를 매번 다시 뽑아, 화면을 볼 때마다 다른 책이 걸리도록 한다.
+ * 장르·검색어·페이지를 매번 다시 뽑아, 화면을 볼 때마다 다른 책이 걸리도록 한다.
  * 항상 첫 장르·첫 페이지만 보면 여러 장르를 골라둔 의미도 없고 화면이 늘 똑같다.
  */
 async function loadRecommendedBooks(
@@ -28,13 +34,14 @@ async function loadRecommendedBooks(
   signal: AbortSignal
 ): Promise<{ genre: Genre; books: BookSummary[] }> {
   const genre = pickRandom(genres)
+  const keyword = pickRandom(keywordsFor(genre.name))
   const page = 1 + Math.floor(Math.random() * PAGE_RANGE)
 
-  const result = await searchBooks(genre.name, BOOK_COUNT, page, signal)
+  const result = await searchBooks(keyword, BOOK_COUNT, page, signal)
   if (result.content.length > 0) return { genre, books: result.content }
 
   // 뒤쪽 페이지에는 결과가 없을 수 있다 — 빈손으로 두지 말고 첫 페이지로 되돌아간다.
-  const firstPage = await searchBooks(genre.name, BOOK_COUNT, 1, signal)
+  const firstPage = await searchBooks(keyword, BOOK_COUNT, 1, signal)
   return { genre, books: firstPage.content }
 }
 
@@ -99,8 +106,16 @@ export default function EmptyFeedGuide() {
     setIsShuffling(true)
 
     try {
-      const picked = await loadRecommendedBooks(genres, controller.signal)
+      let picked = await loadRecommendedBooks(genres, controller.signal)
       if (controller.signal.aborted) return
+
+      // 장르가 하나뿐이거나 같은 페이지를 다시 뽑으면 화면이 그대로라 버튼이 고장난 것처럼 보인다.
+      // 한 번만 더 뽑아 본다 — 책이 적은 장르에서는 결국 같을 수 있으므로 반복하지는 않는다.
+      if (isSameBooks(picked.books, books)) {
+        picked = await loadRecommendedBooks(genres, controller.signal)
+        if (controller.signal.aborted) return
+      }
+
       setGenre(picked.genre)
       setBooks(picked.books)
     } catch (error) {
@@ -110,7 +125,7 @@ export default function EmptyFeedGuide() {
     } finally {
       if (!controller.signal.aborted) setIsShuffling(false)
     }
-  }, [genres])
+  }, [genres, books])
 
   if (isLoading) {
     return <EmptyState icon="auto_stories" message="피드를 준비하고 있어요..." />
