@@ -9,6 +9,9 @@ import { useAuthStore } from '@/store/authStore'
 import { clearRecentKeywords } from '@/features/search/hooks/useRecentKeywords'
 import { clearFeedCache } from '@/store/feedStore'
 import type { EmailVerifyLocationState } from '@/pages/EmailVerificationPage'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import Button from '@/components/ui/Button'
+import Card from '@/components/ui/Card'
 import Icon from '@/components/common/Icon'
 
 function Toggle({
@@ -214,10 +217,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="설정" showBack />
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <ScreenBody>
         {/* Email Verification Banner */}
         {user?.email && !user.emailVerified && (
           <section className="px-5 pt-6">
@@ -250,7 +253,7 @@ export default function SettingsPage() {
         {/* Notification Settings */}
         <section className="px-5 pt-6">
           <h2 className="mb-3 text-lg font-bold text-primary/80">알림 설정</h2>
-          <div className="overflow-hidden rounded-[28px] bg-card shadow-sm">
+          <Card>
             {isSettingsLoading && !settingsError ? (
               <div className="px-5 py-8 text-center text-sm text-muted-foreground">
                 설정을 불러오는 중...
@@ -310,22 +313,18 @@ export default function SettingsPage() {
             ) : (
               <div className="flex flex-col items-center gap-3 px-5 py-8">
                 <p className="text-sm text-muted-foreground">설정을 불러오지 못했습니다</p>
-                <button
-                  type="button"
-                  onClick={() => loadSettings()}
-                  className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
-                >
+                <Button variant="soft" size="sm" onClick={() => loadSettings()}>
                   다시 시도
-                </button>
+                </Button>
               </div>
             )}
-          </div>
+          </Card>
         </section>
 
         {/* Privacy */}
         <section className="px-5 pt-8">
           <h2 className="mb-3 text-lg font-bold text-primary/80">공개 범위</h2>
-          <div className="overflow-hidden rounded-[28px] bg-card shadow-sm">
+          <Card>
             <SettingRow
               title="서재 공개"
               description="다른 사용자가 내 서재를 방문할 수 있습니다."
@@ -348,29 +347,29 @@ export default function SettingsPage() {
                 )
               }
             />
-          </div>
+          </Card>
         </section>
 
         {/* Personalization */}
         <section className="px-5 pt-8">
           <h2 className="mb-3 text-lg font-bold text-primary/80">개인화</h2>
-          <div className="overflow-hidden rounded-[28px] bg-card shadow-sm">
+          <Card>
             <LinkRow title="관심 장르 변경" onClick={() => navigate('/settings/genres')} noBorder />
-          </div>
+          </Card>
         </section>
 
         {/* Block Management */}
         <section className="px-5 pt-8">
           <h2 className="mb-3 text-lg font-bold text-primary/80">차단 관리</h2>
-          <div className="overflow-hidden rounded-[28px] bg-card shadow-sm">
+          <Card>
             <LinkRow title="차단한 사용자" onClick={() => navigate('/settings/blocked')} noBorder />
-          </div>
+          </Card>
         </section>
 
         {/* Account */}
         <section className="px-5 pt-8">
           <h2 className="mb-3 text-lg font-bold text-primary/80">계정 관리</h2>
-          <div className="overflow-hidden rounded-[28px] bg-card shadow-sm">
+          <Card>
             {!isGoogleUser && (
               <LinkRow title="비밀번호 변경" onClick={() => navigate('/settings/password')} />
             )}
@@ -379,7 +378,7 @@ export default function SettingsPage() {
               description={isGoogleUser ? 'Google 연동 중' : '이메일 계정'}
               noBorder
             />
-          </div>
+          </Card>
         </section>
 
         {/* Logout */}
@@ -417,9 +416,9 @@ export default function SettingsPage() {
             <p className="text-sm uppercase tracking-wider">Version 2.4.0</p>
           </div>
         </section>
-      </main>
+      </ScreenBody>
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }

@@ -20,6 +20,7 @@ import AllTabContent from '@/features/search/components/AllTabContent'
 import BookResultList from '@/features/search/components/BookResultList'
 import UserResultList from '@/features/search/components/UserResultList'
 import IsbnScanEntry from '@/features/search/components/IsbnScanEntry'
+import { Screen } from '@/components/layout/Screen'
 
 /**
  * 통합 검색 페이지 (`/search`).
@@ -147,7 +148,7 @@ export default function BookSearchPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       {/* 검색은 하단 탭의 1차 진입점이라 되돌아갈 곳이 없다 — 뒤로가기를 두지 않는다 */}
       <AppHeader title="Shelfeed" />
 
@@ -229,6 +230,6 @@ export default function BookSearchPage() {
         onClose={() => setIsScannerOpen(false)}
         onDetected={handleDetected}
       />
-    </div>
+    </Screen>
   )
 }

@@ -26,6 +26,9 @@ import { READING_STATUS_META } from '@/constants/library'
 import { formatRelativeTime } from '@/lib/utils'
 import { shareLink } from '@/lib/share'
 import { Avatar } from '@/components/common/Avatar'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import IconButton from '@/components/ui/IconButton'
+import Button from '@/components/ui/Button'
 import Icon from '@/components/common/Icon'
 
 // toFrontStatus 유지 이유: getBook 응답의 myLibraryStatus는 string | null 타입(백엔드 Nullable)으로 내려오므로
@@ -155,37 +158,31 @@ export default function BookDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="Shelfeed" showBack />
-        <main aria-busy="true" className="flex flex-1 items-center justify-center pb-24">
+        <ScreenBody centered aria-busy="true">
           <p role="status" className="text-sm text-muted-foreground">
             불러오는 중...
           </p>
-        </main>
+        </ScreenBody>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   if (errorMessage || !book) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="Shelfeed" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
           <Icon name="search_off" className="text-6xl text-muted-foreground/30" />
           <p role="alert" className="text-lg font-bold text-muted-foreground">
             {errorMessage ?? '도서를 찾을 수 없습니다'}
           </p>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
-            돌아가기
-          </button>
+          <Button onClick={() => navigate(-1)}>돌아가기</Button>
         </main>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
@@ -268,23 +265,18 @@ export default function BookDetailPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader
         title="Shelfeed"
         showBack
         rightAction={
-          <button
-            type="button"
-            onClick={handleShare}
-            aria-label="공유"
-            className="flex size-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-          >
+          <IconButton onClick={handleShare} aria-label="공유">
             <Icon name="share" />
-          </button>
+          </IconButton>
         }
       />
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <ScreenBody>
         {/* Hero — 제목 · 표지 · 저자 · 별점 · 독서 상태 */}
         <section className="px-6 pt-6 text-center">
           <h1 className="mb-4 text-2xl font-bold leading-tight">{book.title}</h1>
@@ -412,7 +404,7 @@ export default function BookDetailPage() {
                   id={`book-tab-${tab.value}`}
                   onClick={() => setActiveTab(tab.value)}
                   className={cn(
-                    'flex-1 border-b-2 pb-3 text-center text-[15px] transition-colors',
+                    'flex-1 border-b-2 pb-3 text-center text-md transition-colors',
                     isActive
                       ? 'border-primary font-bold text-foreground'
                       : 'border-transparent font-medium text-muted-foreground hover:text-foreground'
@@ -541,7 +533,7 @@ export default function BookDetailPage() {
 
           {activeTab === 'memo' && <BookMemoTab bookId={book.bookId} />}
         </div>
-      </main>
+      </ScreenBody>
 
       <AddToLibrarySheet
         isOpen={sheetOpen}
@@ -554,6 +546,6 @@ export default function BookDetailPage() {
       />
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }

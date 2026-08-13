@@ -7,6 +7,8 @@ import { useAuthStore } from '@/store/authStore'
 import { login, getGoogleLoginUrl } from '@/api/auth'
 import { isCarouselSeen } from '@/lib/onboarding'
 import { FORM_INPUT_CLASS } from '@/constants/form'
+import FieldError from '@/components/ui/FieldError'
+import ErrorBox from '@/components/ui/ErrorBox'
 
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일을 입력하세요'),
@@ -145,14 +147,7 @@ export default function LoginPage() {
             {isGoogleLoading ? 'Google 로그인 페이지로 이동 중...' : 'Google 로그인'}
           </span>
         </button>
-        {googleErrorMessage && (
-          <p
-            role="alert"
-            className="-mt-6 rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-          >
-            {googleErrorMessage}
-          </p>
-        )}
+        {googleErrorMessage && <ErrorBox message={googleErrorMessage} className="-mt-6" />}
 
         {/* Divider */}
         <div className="relative flex items-center py-4">
@@ -171,9 +166,7 @@ export default function LoginPage() {
               placeholder="email@example.com"
               className={FORM_INPUT_CLASS}
             />
-            {errors.email && (
-              <p className="ml-1 text-xs text-destructive">{errors.email.message}</p>
-            )}
+            {errors.email && <FieldError message={errors.email.message} />}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -192,19 +185,10 @@ export default function LoginPage() {
               placeholder="비밀번호를 입력하세요"
               className={FORM_INPUT_CLASS}
             />
-            {errors.password && (
-              <p className="ml-1 text-xs text-destructive">{errors.password.message}</p>
-            )}
+            {errors.password && <FieldError message={errors.password.message} />}
           </div>
 
-          {errorMessage && (
-            <p
-              role="alert"
-              className="rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-            >
-              {errorMessage}
-            </p>
-          )}
+          {errorMessage && <ErrorBox message={errorMessage} />}
 
           <button
             type="submit"

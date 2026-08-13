@@ -38,9 +38,10 @@ export default tseslint.config(
       ],
     },
   },
-  // 스토리·테스트 파일은 mock import 허용
+  // 스토리·테스트 파일, 그리고 mock 모듈끼리는 mock import 허용
+  // (금지 대상은 프로덕션 코드가 mock을 끌어다 쓰는 경우다)
   {
-    files: ['**/*.stories.tsx', '**/*.test.ts', '**/*.test.tsx'],
+    files: ['**/*.stories.tsx', '**/*.test.ts', '**/*.test.tsx', 'src/mocks/**'],
     rules: {
       'no-restricted-imports': 'off',
     },

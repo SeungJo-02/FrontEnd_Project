@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import Icon, { type IconName } from '@/components/common/Icon'
 
 interface EmptyStateProps {
-  /** 아이콘 이름 (예: "menu_book") */
+  /** material-symbols 아이콘 이름 (예: "menu_book") */
   icon: IconName
   /** 안내 문구 (조건부 텍스트 가능) */
   message: ReactNode

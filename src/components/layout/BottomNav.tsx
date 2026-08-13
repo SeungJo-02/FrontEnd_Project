@@ -27,8 +27,8 @@ export default function BottomNav() {
                 isActive ? 'text-primary' : 'text-muted-foreground'
               )}
             >
-              <Icon name={item.icon} className="text-2xl" filled={isActive} />
-              <span className="text-[10px] font-bold">{item.label}</span>
+              <Icon name={item.icon} filled={isActive} className="text-2xl" />
+              <span className="text-3xs font-bold">{item.label}</span>
             </Link>
           )
         })}

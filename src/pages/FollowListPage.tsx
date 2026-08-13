@@ -14,6 +14,9 @@ import { getUserProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
 import { Avatar } from '@/components/common/Avatar'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Screen } from '@/components/layout/Screen'
+import StatusMessage from '@/components/ui/StatusMessage'
+import Button from '@/components/ui/Button'
 
 type TabValue = 'followers' | 'following'
 
@@ -280,7 +283,7 @@ export default function FollowListPage() {
   const headerTitle = nickname ?? '사용자'
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title={headerTitle} showBack />
 
       {/* 탭 */}
@@ -306,20 +309,10 @@ export default function FollowListPage() {
 
       <main className="flex-1 overflow-y-auto pb-12">
         {isLoading && items.length === 0 && (
-          <p
-            role="status"
-            aria-busy="true"
-            className="py-10 text-center text-sm text-muted-foreground"
-          >
-            불러오는 중...
-          </p>
+          <StatusMessage tone="loading">불러오는 중...</StatusMessage>
         )}
 
-        {!isLoading && errorMessage && (
-          <p role="alert" className="py-10 text-center text-sm text-destructive">
-            {errorMessage}
-          </p>
-        )}
+        {!isLoading && errorMessage && <StatusMessage tone="error">{errorMessage}</StatusMessage>}
 
         {!isLoading && !errorMessage && items.length === 0 && (
           <EmptyState
@@ -395,13 +388,9 @@ export default function FollowListPage() {
                 <p role="alert" className="text-sm text-destructive">
                   {loadMoreError}
                 </p>
-                <button
-                  type="button"
-                  onClick={retryLoadMore}
-                  className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
-                >
+                <Button variant="soft" size="sm" onClick={retryLoadMore}>
                   다시 불러오기
-                </button>
+                </Button>
               </li>
             )}
 
@@ -413,6 +402,6 @@ export default function FollowListPage() {
           </ul>
         )}
       </main>
-    </div>
+    </Screen>
   )
 }

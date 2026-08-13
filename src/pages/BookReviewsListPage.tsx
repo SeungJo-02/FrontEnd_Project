@@ -15,6 +15,9 @@ import BottomNav from '@/components/layout/BottomNav'
 import StarRating from '@/components/common/StarRating'
 import { Avatar } from '@/components/common/Avatar'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import StatusMessage from '@/components/ui/StatusMessage'
+import Button from '@/components/ui/Button'
 import Icon from '@/components/common/Icon'
 
 const sortOptions: { label: string; value: BookReviewSort }[] = [
@@ -242,21 +245,21 @@ export default function BookReviewsListPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="독자 감상" showBack />
-        <main aria-busy="true" className="flex flex-1 items-center justify-center pb-24">
+        <ScreenBody centered aria-busy="true">
           <p role="status" className="text-sm text-muted-foreground">
             불러오는 중...
           </p>
-        </main>
+        </ScreenBody>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   if (errorMessage || !book) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="독자 감상" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
           <Icon name="search_off" className="text-6xl text-muted-foreground/30" />
@@ -266,23 +269,18 @@ export default function BookReviewsListPage() {
               {errorMessage}
             </p>
           )}
-          <button
-            onClick={() => navigate(-1)}
-            className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
-            돌아가기
-          </button>
+          <Button onClick={() => navigate(-1)}>돌아가기</Button>
         </main>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="독자 감상" showBack />
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <ScreenBody>
         {/* Book Context */}
         <section className="px-6 pb-4 pt-6">
           <div className="flex items-center gap-3 rounded-xl bg-primary/10 p-3 shadow-sm">
@@ -406,7 +404,7 @@ export default function BookReviewsListPage() {
                       review.isLiked ? 'text-primary' : 'hover:text-primary'
                     )}
                   >
-                    <Icon name="favorite" className="text-lg" filled={review.isLiked} />
+                    <Icon name="favorite" filled={review.isLiked} className="text-lg" />
                     <span className="text-xs">{review.likeCount}</span>
                   </button>
                   <div className="flex items-center gap-1">
@@ -422,7 +420,9 @@ export default function BookReviewsListPage() {
         {hasNext && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
 
         {isLoadingMore && (
-          <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
+          <StatusMessage tone="hint" compact>
+            더 불러오는 중...
+          </StatusMessage>
         )}
 
         {loadMoreError && !isLoadingMore && (
@@ -430,21 +430,21 @@ export default function BookReviewsListPage() {
             <p role="alert" className="text-sm text-destructive">
               {loadMoreError}
             </p>
-            <button
-              type="button"
+            <Button
+              variant="soft"
+              size="sm"
               onClick={() => {
                 setLoadMoreError(null)
                 fetchMore()
               }}
-              className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
             >
               다시 불러오기
-            </button>
+            </Button>
           </div>
         )}
-      </main>
+      </ScreenBody>
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }

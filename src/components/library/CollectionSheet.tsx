@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import BottomSheet from '@/components/common/BottomSheet'
-import Icon from '@/components/common/Icon'
 import { cn } from '@/lib/utils'
 import {
   COLLECTION_NAME_MAX,
@@ -10,6 +9,7 @@ import {
   renameCollection,
   type BookCollection,
 } from '@/lib/libraryStore'
+import Icon from '@/components/common/Icon'
 
 interface CollectionSheetProps {
   isOpen: boolean
@@ -106,7 +106,7 @@ export default function CollectionSheet({
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-primary/70">
             <Icon name="menu_book" className="text-xl" />
           </span>
-          <span className="flex-1 text-[15px] font-bold">서재 전체</span>
+          <span className="flex-1 text-md font-bold">서재 전체</span>
           {activeId == null && <Icon name="check" className="text-xl text-primary" />}
         </button>
 
@@ -148,9 +148,7 @@ export default function CollectionSheet({
                         <Icon name="folder" className="text-xl" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-bold">
-                          {collection.name}
-                        </span>
+                        <span className="block truncate text-md font-bold">{collection.name}</span>
                         <span className="block text-xs text-muted-foreground">
                           {collection.libraryBookIds.length}권
                         </span>
@@ -214,7 +212,7 @@ export default function CollectionSheet({
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Icon name="add" className="text-xl" />
             </span>
-            <span className="text-[15px] font-bold text-primary">새 모음 만들기</span>
+            <span className="text-md font-bold text-primary">새 모음 만들기</span>
           </button>
         )}
 
@@ -224,7 +222,7 @@ export default function CollectionSheet({
           </p>
         )}
 
-        <p className="mt-5 text-center text-[11px] leading-5 text-muted-foreground/60">
+        <p className="mt-5 text-center text-2xs leading-5 text-muted-foreground/60">
           모음집은 이 기기의 브라우저에만 저장됩니다.
         </p>
       </div>
@@ -259,7 +257,7 @@ function NameForm({
         }}
         placeholder="모음 이름"
         aria-label="모음 이름"
-        className="min-w-0 flex-1 bg-transparent py-1.5 text-[15px] outline-none placeholder:text-muted-foreground/40"
+        className="min-w-0 flex-1 bg-transparent py-1.5 text-md outline-none placeholder:text-muted-foreground/40"
       />
       <button
         type="button"

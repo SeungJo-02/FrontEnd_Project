@@ -10,6 +10,10 @@ import PopupBanner from '@/components/common/PopupBanner'
 import ReviewCard, { type ReviewCardData } from '@/components/common/ReviewCard'
 import { useFeedStore, setFeedCache, clearFeedCache } from '@/store/feedStore'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import StatusMessage from '@/components/ui/StatusMessage'
+import StickyHeader from '@/components/layout/StickyHeader'
+import LoadMoreRetry from '@/components/ui/LoadMoreRetry'
 import Icon from '@/components/common/Icon'
 
 /**
@@ -313,9 +317,9 @@ export default function HomeFeedPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+      <StickyHeader>
         <div className="flex items-center justify-between px-4 py-3">
           <div className="w-10" />
           <h1
@@ -341,14 +345,14 @@ export default function HomeFeedPage() {
             {unreadCount > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white"
+                className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-3xs font-bold leading-none text-white"
               >
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </Link>
         </div>
-      </header>
+      </StickyHeader>
 
       {/* 당겨서 새로고침 인디케이터 — 당긴 만큼 높이가 늘어나고, 손을 떼면 접힌다 */}
       <div
@@ -367,7 +371,7 @@ export default function HomeFeedPage() {
               )}
               style={{ transition: 'transform 200ms' }}
             />
-            <span className="text-[11px] font-semibold">
+            <span className="text-2xs font-semibold">
               {isRefreshing
                 ? '새로고침 중...'
                 : willRefresh
@@ -379,22 +383,12 @@ export default function HomeFeedPage() {
       </div>
 
       {/* Feed */}
-      <main className="flex-1 overflow-y-auto pb-24">
+      <ScreenBody>
         {isLoading && items.length === 0 && (
-          <p
-            role="status"
-            aria-busy="true"
-            className="py-10 text-center text-sm text-muted-foreground"
-          >
-            불러오는 중...
-          </p>
+          <StatusMessage tone="loading">불러오는 중...</StatusMessage>
         )}
 
-        {!isLoading && errorMessage && (
-          <p role="alert" className="py-10 text-center text-sm text-destructive">
-            {errorMessage}
-          </p>
-        )}
+        {!isLoading && errorMessage && <StatusMessage tone="error">{errorMessage}</StatusMessage>}
 
         {/* 팔로우가 없는 신규 사용자는 피드가 빈다 — 안내만 두지 말고 첫 행동으로 이어준다. */}
         {!isLoading && !errorMessage && items.length === 0 && <EmptyFeedGuide />}
@@ -410,32 +404,23 @@ export default function HomeFeedPage() {
             {hasNext && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
 
             {isLoadingMore && (
-              <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
+              <StatusMessage tone="hint" compact>
+                더 불러오는 중...
+              </StatusMessage>
             )}
 
             {loadMoreError && !isLoadingMore && (
-              <div className="flex flex-col items-center gap-2 py-4">
-                <p role="alert" className="text-sm text-destructive">
-                  {loadMoreError}
-                </p>
-                <button
-                  type="button"
-                  onClick={retryLoadMore}
-                  className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
-                >
-                  다시 불러오기
-                </button>
-              </div>
+              <LoadMoreRetry message={loadMoreError} onRetry={retryLoadMore} />
             )}
 
             {!hasNext && !isLoadingMore && !loadMoreError && (
-              <p className="py-4 text-center text-xs text-muted-foreground/50">
+              <StatusMessage tone="hint" compact className="text-muted-foreground/50">
                 모든 감상을 확인했습니다
-              </p>
+              </StatusMessage>
             )}
           </>
         )}
-      </main>
+      </ScreenBody>
 
       <PopupBanner
         imageUrl="/images/popup/event-banner.png"
@@ -443,6 +428,6 @@ export default function HomeFeedPage() {
         storageKey="home-popup"
       />
       <BottomNav />
-    </div>
+    </Screen>
   )
 }

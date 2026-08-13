@@ -105,7 +105,7 @@ export default function BookMemoTab({ bookId }: BookMemoTabProps) {
         </ul>
       )}
 
-      <p className="mt-6 text-center text-[11px] leading-5 text-muted-foreground/60">
+      <p className="mt-6 text-center text-2xs leading-5 text-muted-foreground/60">
         메모는 이 기기의 브라우저에만 저장됩니다.
       </p>
     </div>

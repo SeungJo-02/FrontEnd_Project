@@ -7,6 +7,9 @@ import AppHeader from '@/components/layout/AppHeader'
 import { resetPassword } from '@/api/auth'
 import { PASSWORD_REGEX } from '@/constants/validation'
 import { FORM_INPUT_CLASS } from '@/constants/form'
+import { Screen } from '@/components/layout/Screen'
+import FieldError from '@/components/ui/FieldError'
+import ErrorBox from '@/components/ui/ErrorBox'
 import Icon from '@/components/common/Icon'
 
 const schema = z
@@ -49,7 +52,7 @@ export default function PasswordResetPage() {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="새 비밀번호 설정" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
           <Icon name="error" className="text-5xl text-destructive" />
@@ -67,7 +70,7 @@ export default function PasswordResetPage() {
             재설정 요청하기
           </button>
         </main>
-      </div>
+      </Screen>
     )
   }
 
@@ -86,7 +89,7 @@ export default function PasswordResetPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="새 비밀번호 설정" showBack />
 
       <main className="flex flex-1 flex-col px-6 pt-12">
@@ -121,11 +124,7 @@ export default function PasswordResetPage() {
                   placeholder="8자 이상 입력해주세요"
                   className={FORM_INPUT_CLASS}
                 />
-                {errors.newPassword && (
-                  <p role="alert" className="ml-1 text-xs text-destructive">
-                    {errors.newPassword.message}
-                  </p>
-                )}
+                {errors.newPassword && <FieldError message={errors.newPassword.message} />}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -140,25 +139,14 @@ export default function PasswordResetPage() {
                   placeholder="비밀번호를 다시 입력해주세요"
                   className={FORM_INPUT_CLASS}
                 />
-                {errors.confirmPassword && (
-                  <p role="alert" className="ml-1 text-xs text-destructive">
-                    {errors.confirmPassword.message}
-                  </p>
-                )}
+                {errors.confirmPassword && <FieldError message={errors.confirmPassword.message} />}
               </div>
 
               <p className="ml-1 text-xs text-muted-foreground">
                 영문, 숫자, 특수문자 포함 8자 이상
               </p>
 
-              {errorMessage && (
-                <p
-                  role="alert"
-                  className="rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-                >
-                  {errorMessage}
-                </p>
-              )}
+              {errorMessage && <ErrorBox message={errorMessage} />}
 
               <button
                 type="submit"
@@ -171,6 +159,6 @@ export default function PasswordResetPage() {
           </>
         )}
       </main>
-    </div>
+    </Screen>
   )
 }

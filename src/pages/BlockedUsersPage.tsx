@@ -5,6 +5,10 @@ import BottomNav from '@/components/layout/BottomNav'
 import { getBlockedUsers, unblockUser, type BlockedUser } from '@/api/block'
 import { Avatar } from '@/components/common/Avatar'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Screen, ScreenBody } from '@/components/layout/Screen'
+import StatusMessage from '@/components/ui/StatusMessage'
+import Button from '@/components/ui/Button'
+import Card from '@/components/ui/Card'
 import Icon from '@/components/common/Icon'
 
 /**
@@ -124,21 +128,21 @@ export default function BlockedUsersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="차단한 사용자" showBack />
-        <main aria-busy="true" className="flex flex-1 items-center justify-center pb-24">
+        <ScreenBody centered aria-busy="true">
           <p role="status" className="text-sm text-muted-foreground">
             불러오는 중...
           </p>
-        </main>
+        </ScreenBody>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   if (errorMessage) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="차단한 사용자" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-24">
           <Icon name="error" className="text-5xl text-muted-foreground/30" />
@@ -147,20 +151,20 @@ export default function BlockedUsersPage() {
           </p>
         </main>
         <BottomNav />
-      </div>
+      </Screen>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="차단한 사용자" showBack />
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <ScreenBody>
         {users.length === 0 ? (
           <EmptyState icon="person_off" message="차단한 사용자가 없습니다" />
         ) : (
           <section className="px-5 pt-4">
-            <div className="overflow-hidden rounded-[28px] bg-card shadow-sm">
+            <Card>
               {users.map((user, idx) => (
                 <div
                   key={user.userId}
@@ -176,7 +180,7 @@ export default function BlockedUsersPage() {
                       iconClassName="text-[20px]"
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-[15px] font-semibold text-foreground">
+                      <p className="truncate text-md font-semibold text-foreground">
                         {user.nickname}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -197,12 +201,14 @@ export default function BlockedUsersPage() {
                   </button>
                 </div>
               ))}
-            </div>
+            </Card>
 
             {hasNext && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
 
             {isLoadingMore && (
-              <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
+              <StatusMessage tone="hint" compact>
+                더 불러오는 중...
+              </StatusMessage>
             )}
 
             {loadMoreError && !isLoadingMore && (
@@ -210,23 +216,23 @@ export default function BlockedUsersPage() {
                 <p role="alert" className="text-sm text-destructive">
                   {loadMoreError}
                 </p>
-                <button
-                  type="button"
+                <Button
+                  variant="soft"
+                  size="sm"
                   onClick={() => {
                     setLoadMoreError(null)
                     fetchMore()
                   }}
-                  className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
                 >
                   다시 불러오기
-                </button>
+                </Button>
               </div>
             )}
           </section>
         )}
-      </main>
+      </ScreenBody>
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }

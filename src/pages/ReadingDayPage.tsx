@@ -3,10 +3,11 @@ import { Link, useParams } from 'react-router-dom'
 import axios from 'axios'
 import AppHeader from '@/components/layout/AppHeader'
 import BottomNav from '@/components/layout/BottomNav'
-import Icon from '@/components/common/Icon'
 import { getMyLibrary, backendToFrontStatus, type LibraryBookSummary } from '@/api/library'
 import { isDateKey, parseDateKey, toDateKey } from '@/lib/date'
 import { getReadingProgress, toPercent } from '@/lib/readingProgressStore'
+import { Screen } from '@/components/layout/Screen'
+import Icon from '@/components/common/Icon'
 
 const LIBRARY_PAGE_SIZE = 100
 const LIBRARY_MAX_PAGES = 10
@@ -115,7 +116,7 @@ export default function ReadingDayPage() {
   const hasAny = reading.length > 0 || finished.length > 0
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title={headerTitle} showBack />
 
       <main className="flex-1 px-5 pb-24 pt-5">
@@ -154,7 +155,7 @@ export default function ReadingDayPage() {
       </main>
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }
 

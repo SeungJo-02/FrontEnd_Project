@@ -8,6 +8,10 @@ import { blockUser } from '@/api/block'
 import { getUserReviews, REVIEW_PAGE_SIZE, type ReviewListItem } from '@/api/review'
 import { formatRelativeTime } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
+import { Avatar } from '@/components/common/Avatar'
+import { Screen } from '@/components/layout/Screen'
+import Button from '@/components/ui/Button'
+import StatTile from '@/components/ui/StatTile'
 import Icon from '@/components/common/Icon'
 
 /**
@@ -140,35 +144,29 @@ export default function UserProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="프로필" showBack />
         <main aria-busy="true" className="flex flex-1 items-center justify-center">
           <p role="status" className="text-sm text-muted-foreground">
             불러오는 중...
           </p>
         </main>
-      </div>
+      </Screen>
     )
   }
 
   if (errorMessage || !profile) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         <AppHeader title="프로필" showBack />
         <main className="flex flex-1 flex-col items-center justify-center gap-4">
           <Icon name="error" className="text-6xl text-muted-foreground/30" />
           <p role="alert" className="text-lg font-bold text-muted-foreground">
             {errorMessage ?? '프로필을 불러올 수 없습니다.'}
           </p>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
-            돌아가기
-          </button>
+          <Button onClick={() => navigate(-1)}>돌아가기</Button>
         </main>
-      </div>
+      </Screen>
     )
   }
 
@@ -302,23 +300,21 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="프로필" showBack />
 
       <main className="flex-1 overflow-y-auto pb-12">
         {/* Profile Intro */}
         <section className="px-6 pt-8 text-center">
           <div className="mx-auto mb-5 flex h-36 w-36 items-center justify-center rounded-full bg-primary/10">
-            {profile.profileImageUrl ? (
-              <img
-                src={profile.profileImageUrl}
-                alt={`${profile.nickname} 프로필 이미지`}
-                loading="lazy"
-                className="h-32 w-32 rounded-full object-cover"
-              />
-            ) : (
-              <Icon name="person" className="text-6xl text-muted-foreground/40" />
-            )}
+            {/* 사진이 없으면 Avatar가 닉네임 기반 자동 아바타를 그린다 (피드·댓글과 동일) */}
+            <Avatar
+              src={profile.profileImageUrl}
+              alt={`${profile.nickname} 프로필 이미지`}
+              name={profile.nickname}
+              className="h-32 w-32"
+              iconClassName="text-6xl text-muted-foreground/40"
+            />
           </div>
 
           <h1 className="text-3xl font-bold tracking-tight">{profile.nickname}</h1>
@@ -408,18 +404,9 @@ export default function UserProfilePage() {
         {/* Stats */}
         <section className="px-6 pt-8">
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-[24px] bg-card px-3 py-5 text-center shadow-sm">
-              <p className="text-xs font-semibold text-primary/60">팔로워</p>
-              <p className="mt-2 text-3xl font-bold text-primary">{profile.followerCount}</p>
-            </div>
-            <div className="rounded-[24px] bg-card px-3 py-5 text-center shadow-sm">
-              <p className="text-xs font-semibold text-primary/60">팔로잉</p>
-              <p className="mt-2 text-3xl font-bold text-primary">{profile.followingCount}</p>
-            </div>
-            <div className="rounded-[24px] bg-card px-3 py-5 text-center shadow-sm">
-              <p className="text-xs font-semibold text-primary/60">감상</p>
-              <p className="mt-2 text-3xl font-bold text-primary">{profile.reviewCount}개</p>
-            </div>
+            <StatTile label="팔로워" value={<>{profile.followerCount}</>} />
+            <StatTile label="팔로잉" value={<>{profile.followingCount}</>} />
+            <StatTile label="감상" value={<>{profile.reviewCount}개</>} />
           </div>
         </section>
 
@@ -431,7 +418,7 @@ export default function UserProfilePage() {
               감상을 불러오는 중...
             </p>
           ) : reviews.length === 0 && !reviewsErrorMessage ? (
-            <div className="rounded-[24px] bg-card px-5 py-8 text-center text-sm text-muted-foreground">
+            <div className="rounded-tile bg-card px-5 py-8 text-center text-sm text-muted-foreground">
               아직 공개 감상이 없습니다.
             </div>
           ) : (
@@ -440,9 +427,9 @@ export default function UserProfilePage() {
                 <Link
                   key={review.reviewId}
                   to={`/review/${review.reviewId}`}
-                  className="flex cursor-pointer gap-4 rounded-[24px] bg-card p-4 shadow-sm transition-colors hover:bg-primary/5"
+                  className="flex cursor-pointer gap-4 rounded-tile bg-card p-4 shadow-sm transition-colors hover:bg-primary/5"
                 >
-                  <div className="flex h-[96px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-primary/5">
+                  <div className="flex h-[96px] w-[76px] shrink-0 items-center justify-center overflow-hidden rounded-control bg-primary/5">
                     {review.book.coverImageUrl ? (
                       <img
                         src={review.book.coverImageUrl}
@@ -507,6 +494,6 @@ export default function UserProfilePage() {
           )}
         </section>
       </main>
-    </div>
+    </Screen>
   )
 }

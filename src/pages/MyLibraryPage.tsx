@@ -4,6 +4,7 @@ import axios from 'axios'
 import { cn } from '@/lib/utils'
 import BottomNav from '@/components/layout/BottomNav'
 import { EmptyState } from '@/components/common/EmptyState'
+import Icon from '@/components/common/Icon'
 import {
   getMyLibrary,
   backendToFrontStatus,
@@ -19,7 +20,6 @@ import {
   LIBRARY_STATUS_BADGE as statusBadge,
   type LibraryFilterValue as FilterValue,
 } from '@/constants/library'
-import Icon from '@/components/common/Icon'
 import CollectionSheet from '@/components/library/CollectionSheet'
 import {
   applyLibraryOrder,
@@ -30,6 +30,11 @@ import {
   type BookCollection,
 } from '@/lib/libraryStore'
 import { useGridDragReorder } from '@/hooks/useGridDragReorder'
+import { Screen } from '@/components/layout/Screen'
+import StatusMessage from '@/components/ui/StatusMessage'
+import Button from '@/components/ui/Button'
+import StickyHeader from '@/components/layout/StickyHeader'
+import LoadMoreRetry from '@/components/ui/LoadMoreRetry'
 
 export default function MyLibraryPage() {
   const [activeFilter, setActiveFilter] = useState<FilterValue>('all')
@@ -361,9 +366,9 @@ export default function MyLibraryPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+      <StickyHeader>
         <div className="flex items-center justify-between px-4 py-4">
           <div className="w-10" />
           <h1 className="text-2xl font-bold">내 서재</h1>
@@ -390,7 +395,7 @@ export default function MyLibraryPage() {
             />
           </div>
         )}
-      </header>
+      </StickyHeader>
 
       {/* Filter Chips — 우측 페이드로 가로 스크롤 가능함을 시각적으로 암시 + 활성 칩 자동 가운데 정렬 */}
       <div className="relative">
@@ -462,7 +467,7 @@ export default function MyLibraryPage() {
               activeCollection ? 'text-primary' : 'text-muted-foreground hover:text-primary'
             )}
           >
-            <Icon name="folder" className="text-xl" filled={activeCollection != null} />
+            <Icon name="folder" filled={activeCollection != null} className="text-xl" />
           </button>
         </div>
       </div>
@@ -476,20 +481,10 @@ export default function MyLibraryPage() {
       {/* Book Grid */}
       <main className="flex-1 overflow-y-auto px-4 pb-24">
         {isLoading && items.length === 0 && (
-          <p
-            role="status"
-            aria-busy="true"
-            className="py-10 text-center text-sm text-muted-foreground"
-          >
-            불러오는 중...
-          </p>
+          <StatusMessage tone="loading">불러오는 중...</StatusMessage>
         )}
 
-        {!isLoading && errorMessage && (
-          <p role="alert" className="py-10 text-center text-sm text-destructive">
-            {errorMessage}
-          </p>
-        )}
+        {!isLoading && errorMessage && <StatusMessage tone="error">{errorMessage}</StatusMessage>}
 
         {!isLoading && !errorMessage && items.length === 0 && (
           <EmptyState
@@ -515,15 +510,16 @@ export default function MyLibraryPage() {
                 <p className="text-xs text-muted-foreground/70">
                   추가로 로드되지 않은 도서가 있을 수 있습니다.
                 </p>
-                <button
-                  type="button"
+                <Button
+                  variant="soft"
+                  size="sm"
+                  className="disabled:opacity-60"
                   onClick={fetchMore}
                   disabled={isLoadingMore}
-                  className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20 disabled:opacity-60"
                 >
                   {/* [code-review MED fix] 1회 클릭 = 1페이지 단위임을 사용자에게 명시 */}
                   {isLoadingMore ? '불러오는 중...' : '다음 페이지 불러오기'}
-                </button>
+                </Button>
               </>
             )}
           </EmptyState>
@@ -573,7 +569,7 @@ export default function MyLibraryPage() {
                       {badge && (
                         <div
                           className={cn(
-                            'absolute bottom-1 right-1 rounded-full px-2 py-0.5 text-[10px] text-white',
+                            'absolute bottom-1 right-1 rounded-full px-2 py-0.5 text-3xs text-white',
                             badge.bg
                           )}
                         >
@@ -583,7 +579,7 @@ export default function MyLibraryPage() {
                       {reviewBadge && (
                         <span
                           className={cn(
-                            'absolute right-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm',
+                            'absolute right-1 top-1 rounded-full px-2 py-0.5 text-3xs font-bold shadow-sm',
                             reviewBadge.className
                           )}
                         >
@@ -653,13 +649,15 @@ export default function MyLibraryPage() {
             <div ref={sentinelRef} className="h-10" />
 
             {isLoadingMore && (
-              <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
+              <StatusMessage tone="hint" compact>
+                더 불러오는 중...
+              </StatusMessage>
             )}
 
             {!hasNext && !isLoadingMore && !loadMoreError && (
-              <p className="py-4 text-center text-xs text-muted-foreground/50">
+              <StatusMessage tone="hint" compact className="text-muted-foreground/50">
                 모든 도서를 확인했습니다
-              </p>
+              </StatusMessage>
             )}
           </>
         )}
@@ -669,18 +667,7 @@ export default function MyLibraryPage() {
             사용자가 원인을 알 수 있도록 conditional 밖으로 hoist. items가 0건일 땐 errorMessage
             분기로 가므로 items.length > 0 가드만 추가. */}
         {items.length > 0 && loadMoreError && !isLoadingMore && (
-          <div className="flex flex-col items-center gap-2 py-4">
-            <p role="alert" className="text-sm text-destructive">
-              {loadMoreError}
-            </p>
-            <button
-              type="button"
-              onClick={retryLoadMore}
-              className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
-            >
-              다시 불러오기
-            </button>
-          </div>
+          <LoadMoreRetry message={loadMoreError} onRetry={retryLoadMore} />
         )}
       </main>
 
@@ -697,6 +684,6 @@ export default function MyLibraryPage() {
       />
 
       <BottomNav />
-    </div>
+    </Screen>
   )
 }

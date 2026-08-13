@@ -6,6 +6,8 @@ import { getGenres, completeOnboarding, updateMyGenres, type Genre } from '@/api
 import { getMyProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Screen } from '@/components/layout/Screen'
+import Button from '@/components/ui/Button'
 import Icon from '@/components/common/Icon'
 
 /**
@@ -110,40 +112,34 @@ export default function GenreSelectionPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         {isSettingsMode && <AppHeader title="관심 장르 변경" showBack />}
         <main className="flex flex-1 items-center justify-center">
           <p role="status" className="text-sm text-muted-foreground">
             불러오는 중...
           </p>
         </main>
-      </div>
+      </Screen>
     )
   }
 
   if (errorMessage) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <Screen>
         {isSettingsMode && <AppHeader title="관심 장르 변경" showBack />}
         <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
           <Icon name="error" className="text-5xl text-muted-foreground/30" />
           <p role="alert" className="text-sm text-muted-foreground">
             {errorMessage}
           </p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
-            다시 시도
-          </button>
+          <Button onClick={() => window.location.reload()}>다시 시도</Button>
         </main>
-      </div>
+      </Screen>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       {isSettingsMode ? (
         <AppHeader title="관심 장르 변경" showBack />
       ) : (
@@ -169,7 +165,7 @@ export default function GenreSelectionPage() {
                 type="button"
                 onClick={() => toggleGenre(genre.genreId)}
                 aria-pressed={isSelected}
-                className={`rounded-full px-5 py-3 text-[15px] font-semibold transition-all ${
+                className={`rounded-full px-5 py-3 text-md font-semibold transition-all ${
                   isSelected
                     ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                     : 'border border-primary/15 bg-card text-foreground hover:bg-primary/5'
@@ -210,6 +206,6 @@ export default function GenreSelectionPage() {
                 : `선택 완료 (${selectedIds.size}개)`}
         </button>
       </div>
-    </div>
+    </Screen>
   )
 }

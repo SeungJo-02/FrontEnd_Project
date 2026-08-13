@@ -7,6 +7,9 @@ import { useAuthStore } from '@/store/authStore'
 import { signup, checkEmail, checkNickname } from '@/api/auth'
 import { PASSWORD_REGEX } from '@/constants/validation'
 import type { EmailVerifyLocationState } from '@/pages/EmailVerificationPage'
+import { Screen } from '@/components/layout/Screen'
+import FieldError from '@/components/ui/FieldError'
+import ErrorBox from '@/components/ui/ErrorBox'
 import Icon from '@/components/common/Icon'
 
 const step1Schema = z
@@ -152,7 +155,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       {/* Header */}
       <div className="flex items-center justify-between p-4 pb-2">
         <button
@@ -207,9 +210,7 @@ export default function SignupPage() {
                   className="h-14 w-full rounded-xl border border-primary/20 bg-card p-4 text-base outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
                 {step1Form.formState.errors.email && (
-                  <p className="ml-1 text-xs text-destructive">
-                    {step1Form.formState.errors.email.message}
-                  </p>
+                  <FieldError message={step1Form.formState.errors.email.message} />
                 )}
               </div>
 
@@ -233,9 +234,7 @@ export default function SignupPage() {
                   </button>
                 </div>
                 {step1Form.formState.errors.password && (
-                  <p className="ml-1 text-xs text-destructive">
-                    {step1Form.formState.errors.password.message}
-                  </p>
+                  <FieldError message={step1Form.formState.errors.password.message} />
                 )}
               </div>
 
@@ -248,9 +247,7 @@ export default function SignupPage() {
                   className="h-14 w-full rounded-xl border border-primary/20 bg-card p-4 text-base outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
                 {step1Form.formState.errors.passwordConfirm && (
-                  <p className="ml-1 text-xs text-destructive">
-                    {step1Form.formState.errors.passwordConfirm.message}
-                  </p>
+                  <FieldError message={step1Form.formState.errors.passwordConfirm.message} />
                 )}
               </div>
             </div>
@@ -314,9 +311,7 @@ export default function SignupPage() {
                   className="h-14 w-full rounded-xl border border-primary/20 bg-card px-4 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
                 {step2Form.formState.errors.nickname && (
-                  <p className="ml-1 text-xs text-destructive">
-                    {step2Form.formState.errors.nickname.message}
-                  </p>
+                  <FieldError message={step2Form.formState.errors.nickname.message} />
                 )}
                 <div id="nickname-status" aria-live="polite">
                   {!step2Form.formState.errors.nickname && nicknameStatus === 'checking' && (
@@ -326,7 +321,7 @@ export default function SignupPage() {
                     <p className="ml-1 text-xs text-green-600">사용 가능한 닉네임입니다</p>
                   )}
                   {!step2Form.formState.errors.nickname && nicknameStatus === 'taken' && (
-                    <p className="ml-1 text-xs text-destructive">이미 사용 중인 닉네임입니다</p>
+                    <FieldError message="이미 사용 중인 닉네임입니다" />
                   )}
                 </div>
               </div>
@@ -366,14 +361,7 @@ export default function SignupPage() {
             </div>
 
             <div className="mt-auto p-6 pb-10">
-              {step2ErrorMessage && (
-                <p
-                  role="alert"
-                  className="mb-4 rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-                >
-                  {step2ErrorMessage}
-                </p>
-              )}
+              {step2ErrorMessage && <ErrorBox message={step2ErrorMessage} className="mb-4" />}
               <button
                 type="submit"
                 disabled={isStep2Loading}
@@ -389,6 +377,6 @@ export default function SignupPage() {
           </form>
         </>
       )}
-    </div>
+    </Screen>
   )
 }

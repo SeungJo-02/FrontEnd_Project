@@ -13,6 +13,10 @@ import {
 import { getUserProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Screen } from '@/components/layout/Screen'
+import StatusMessage from '@/components/ui/StatusMessage'
+import Button from '@/components/ui/Button'
+import LoadMoreRetry from '@/components/ui/LoadMoreRetry'
 import {
   LIBRARY_FILTERS as filters,
   LIBRARY_STATUS_BADGE as statusBadge,
@@ -209,7 +213,7 @@ export default function UserLibraryPage() {
   const headerTitle = nickname ? `${nickname}의 서재` : '서재'
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title={headerTitle} showBack />
 
       {/* PRIVATE 분기: 필터/카운트/그리드 모두 숨기고 풀스크린 안내 */}
@@ -220,13 +224,9 @@ export default function UserLibraryPage() {
           <p className="max-w-xs text-center text-sm text-muted-foreground">
             이 사용자가 서재를 공개하지 않았어요.
           </p>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mt-4 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground"
-          >
+          <Button className="mt-4" onClick={() => navigate(-1)}>
             돌아가기
-          </button>
+          </Button>
         </main>
       ) : (
         <>
@@ -263,19 +263,11 @@ export default function UserLibraryPage() {
           {/* Book Grid */}
           <main className="flex-1 overflow-y-auto px-4 pb-12">
             {isLoading && items.length === 0 && (
-              <p
-                role="status"
-                aria-busy="true"
-                className="py-10 text-center text-sm text-muted-foreground"
-              >
-                불러오는 중...
-              </p>
+              <StatusMessage tone="loading">불러오는 중...</StatusMessage>
             )}
 
             {!isLoading && errorMessage && (
-              <p role="alert" className="py-10 text-center text-sm text-destructive">
-                {errorMessage}
-              </p>
+              <StatusMessage tone="error">{errorMessage}</StatusMessage>
             )}
 
             {!isLoading && !errorMessage && items.length === 0 && (
@@ -322,7 +314,7 @@ export default function UserLibraryPage() {
                           {badge && (
                             <div
                               className={cn(
-                                'absolute bottom-1 right-1 rounded-full px-2 py-0.5 text-[10px] text-white',
+                                'absolute bottom-1 right-1 rounded-full px-2 py-0.5 text-3xs text-white',
                                 badge.bg
                               )}
                             >
@@ -349,36 +341,25 @@ export default function UserLibraryPage() {
                 <div ref={sentinelRef} className="h-10" />
 
                 {isLoadingMore && (
-                  <p className="py-4 text-center text-xs text-muted-foreground">
+                  <StatusMessage tone="hint" compact>
                     더 불러오는 중...
-                  </p>
+                  </StatusMessage>
                 )}
 
                 {loadMoreError && !isLoadingMore && (
-                  <div className="flex flex-col items-center gap-2 py-4">
-                    <p role="alert" className="text-sm text-destructive">
-                      {loadMoreError}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={retryLoadMore}
-                      className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
-                    >
-                      다시 불러오기
-                    </button>
-                  </div>
+                  <LoadMoreRetry message={loadMoreError} onRetry={retryLoadMore} />
                 )}
 
                 {!hasNext && !isLoadingMore && !loadMoreError && (
-                  <p className="py-4 text-center text-xs text-muted-foreground/50">
+                  <StatusMessage tone="hint" compact className="text-muted-foreground/50">
                     모든 도서를 확인했습니다
-                  </p>
+                  </StatusMessage>
                 )}
               </>
             )}
           </main>
         </>
       )}
-    </div>
+    </Screen>
   )
 }

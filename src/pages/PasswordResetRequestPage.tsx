@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom'
 import AppHeader from '@/components/layout/AppHeader'
 import { requestPasswordReset } from '@/api/auth'
 import { FORM_INPUT_CLASS } from '@/constants/form'
+import { Screen } from '@/components/layout/Screen'
+import FieldError from '@/components/ui/FieldError'
 import Icon from '@/components/common/Icon'
 
 const schema = z.object({
@@ -41,7 +43,7 @@ export default function PasswordResetRequestPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader title="비밀번호 재설정" showBack />
 
       <main className="flex flex-1 flex-col px-6 pt-12">
@@ -84,11 +86,7 @@ export default function PasswordResetRequestPage() {
                   placeholder="email@example.com"
                   className={FORM_INPUT_CLASS}
                 />
-                {errors.email && (
-                  <p role="alert" className="ml-1 text-xs text-destructive">
-                    {errors.email.message}
-                  </p>
-                )}
+                {errors.email && <FieldError message={errors.email.message} />}
               </div>
 
               <button
@@ -102,6 +100,6 @@ export default function PasswordResetRequestPage() {
           </>
         )}
       </main>
-    </div>
+    </Screen>
   )
 }

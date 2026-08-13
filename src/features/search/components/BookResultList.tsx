@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { BookSummary } from '@/api/book'
+import StatusMessage from '@/components/ui/StatusMessage'
+import LoadMoreRetry from '@/components/ui/LoadMoreRetry'
 import Icon from '@/components/common/Icon'
 
 interface BookResultListProps {
@@ -61,19 +63,11 @@ export default function BookResultList({
   }, [hasResults])
 
   if (isLoading && books.length === 0) {
-    return (
-      <p role="status" aria-busy="true" className="py-10 text-center text-sm text-muted-foreground">
-        검색 중...
-      </p>
-    )
+    return <StatusMessage tone="loading">검색 중...</StatusMessage>
   }
 
   if (!isLoading && errorMessage) {
-    return (
-      <p role="alert" className="py-10 text-center text-sm text-destructive">
-        {errorMessage}
-      </p>
-    )
+    return <StatusMessage tone="error">{errorMessage}</StatusMessage>
   }
 
   if (!isLoading && !errorMessage && books.length === 0) {
@@ -128,28 +122,19 @@ export default function BookResultList({
       <div ref={sentinelRef} className="h-10" aria-hidden="true" />
 
       {isLoadingMore && (
-        <p className="py-4 text-center text-xs text-muted-foreground">더 불러오는 중...</p>
+        <StatusMessage tone="hint" compact>
+          더 불러오는 중...
+        </StatusMessage>
       )}
 
       {loadMoreError && !isLoadingMore && (
-        <div className="flex flex-col items-center gap-2 py-4">
-          <p role="alert" className="text-sm text-destructive">
-            {loadMoreError}
-          </p>
-          <button
-            type="button"
-            onClick={onRetryLoadMore}
-            className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20"
-          >
-            다시 불러오기
-          </button>
-        </div>
+        <LoadMoreRetry message={loadMoreError} onRetry={onRetryLoadMore} />
       )}
 
       {!hasNext && !isLoadingMore && !loadMoreError && !isIsbnMode && (
-        <p className="py-4 text-center text-xs text-muted-foreground/50">
+        <StatusMessage tone="hint" compact className="text-muted-foreground/50">
           모든 결과를 확인했습니다
-        </p>
+        </StatusMessage>
       )}
     </div>
   )

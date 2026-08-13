@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { useModalA11y } from '@/hooks/useModalA11y'
-import Icon from './Icon'
+import Icon from '@/components/common/Icon'
 
 interface BottomSheetProps {
   isOpen: boolean

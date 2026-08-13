@@ -8,6 +8,10 @@ import { updateProfile } from '@/api/member'
 import { useAuthStore } from '@/store/authStore'
 import { FORM_INPUT_CLASS } from '@/constants/form'
 import { fileToSquareDataUrl, ImageProcessingError } from '@/lib/image'
+import { Avatar } from '@/components/common/Avatar'
+import { Screen } from '@/components/layout/Screen'
+import FieldError from '@/components/ui/FieldError'
+import ErrorBox from '@/components/ui/ErrorBox'
 import Icon from '@/components/common/Icon'
 
 const NICKNAME_MAX = 50
@@ -105,7 +109,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <Screen>
       <AppHeader
         title="프로필 편집"
         showBack
@@ -126,15 +130,13 @@ export default function EditProfilePage() {
         <section className="mb-10 flex flex-col items-center">
           <div className="relative">
             <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-background bg-primary/10 shadow-lg shadow-primary/10">
-              {previewImageUrl ? (
-                <img
-                  src={previewImageUrl}
-                  alt={`${user?.nickname ?? ''} 프로필 이미지`}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Icon name="person" className="text-6xl text-muted-foreground/40" />
-              )}
+              <Avatar
+                src={previewImageUrl}
+                alt={`${user?.nickname ?? ''} 프로필 이미지`}
+                name={user?.nickname}
+                className="h-full w-full"
+                iconClassName="text-6xl text-muted-foreground/40"
+              />
             </div>
 
             <input
@@ -197,11 +199,7 @@ export default function EditProfilePage() {
               placeholder="이름을 입력하세요"
               className={FORM_INPUT_CLASS}
             />
-            {errors.nickname && (
-              <p role="alert" className="ml-1 text-xs text-destructive">
-                {errors.nickname.message}
-              </p>
-            )}
+            {errors.nickname && <FieldError message={errors.nickname.message} />}
           </div>
 
           {/* Bio */}
@@ -225,25 +223,13 @@ export default function EditProfilePage() {
               placeholder="나의 서재를 소개해주세요"
               className="min-h-[120px] w-full resize-none rounded-xl border-none bg-card px-5 py-4 text-sm shadow-sm transition-all placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-primary/20"
             />
-            {errors.bio && (
-              <p role="alert" className="ml-1 text-xs text-destructive">
-                {errors.bio.message}
-              </p>
-            )}
+            {errors.bio && <FieldError message={errors.bio.message} />}
           </div>
 
           {/* Error Message */}
-          {errorMessage && (
-            <p
-              role="alert"
-              aria-atomic="true"
-              className="rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-            >
-              {errorMessage}
-            </p>
-          )}
+          {errorMessage && <ErrorBox message={errorMessage} />}
         </form>
       </main>
-    </div>
+    </Screen>
   )
 }
