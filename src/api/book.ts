@@ -19,6 +19,39 @@ export interface BookSearchListResponse {
   size: number
 }
 
+export interface BookGenreListResponse {
+  content: BookSummary[]
+  /** 1부터 시작하는 현재 페이지. */
+  page: number
+  totalPages: number
+  totalElements: number
+  hasNext: boolean
+  size: number
+}
+
+/**
+ * 장르에 속한 도서를 페이지로 조회한다.
+ *
+ * 검색과 달리 알라딘을 부르지 않고, 저장된 도서를 장르의 알라딘 카테고리 패턴으로 추린다.
+ * 장르명을 검색어로 쓰던 방식은 제목에 그 낱말이 든 책만 걸려 '만화/라이트노벨'이 2권뿐이었다.
+ */
+export async function getBooksByGenre(
+  genreId: number,
+  limit = 20,
+  page = 1,
+  signal?: AbortSignal
+): Promise<BookGenreListResponse> {
+  try {
+    const { data } = await apiClient.get<ApiResponse<BookGenreListResponse>>(
+      '/api/v1/books/by-genre',
+      { params: { genreId, limit, page }, signal }
+    )
+    return parseApiResponse(data, '장르별 도서 응답이 올바르지 않습니다.')
+  } catch (error) {
+    throw normalizeAxiosError(error, '추천 도서를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.')
+  }
+}
+
 export type BackendReadingStatus = 'WANT_TO_READ' | 'READING' | 'FINISHED' | 'STOPPED'
 
 export interface BookDetail {
