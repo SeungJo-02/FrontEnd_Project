@@ -60,6 +60,10 @@ export default function WriteReviewPage() {
   const [book, setBook] = useState<ReviewFormBook | null>(null)
   // null이면 아직 안 고른 상태. 기본값을 미리 채워두면 그 점수로 쏠려 별점이 의미를 잃는다.
   const [rating, setRating] = useState<number | null>(null)
+  // 별점 입력판을 접어 두고 버튼으로 연다. 감상 본문이 화면 맨 위로 오게 하려는 배치라,
+  // 안 고른 채 제출하면 여기서 직접 열어 준다(handleSubmit).
+  const [isRatingOpen, setIsRatingOpen] = useState(false)
+  const ratingPanelRef = useRef<HTMLDivElement>(null)
   const [reviewText, setReviewText] = useState('')
   const [quoteText, setQuoteText] = useState('')
   const [isQuoteEditorOpen, setIsQuoteEditorOpen] = useState(false)
@@ -293,6 +297,12 @@ export default function WriteReviewPage() {
     // 표현할 값이 없고, 임의의 기본값을 대신 보내면 사용자가 매기지 않은 점수가 남는다.
     if (rating == null) {
       setSubmitErrorMessage('별점을 선택해주세요.')
+      // 별점판이 접혀 있으면 "선택해주세요"만 봐서는 어디서 고르는지 알 수 없다. 직접 펴서 보여준다.
+      setIsRatingOpen(true)
+      // 펼쳐진 뒤에 스크롤해야 위치가 잡힌다. 렌더 한 번을 기다린다.
+      requestAnimationFrame(() => {
+        ratingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
       return
     }
 
@@ -427,55 +437,6 @@ export default function WriteReviewPage() {
           </div>
         </section>
 
-        {/* Rating */}
-        <section className="px-6 py-4">
-          <div className="rounded-2xl bg-card px-6 py-6 shadow-sm">
-            <p className="mb-3 text-center text-sm font-bold text-muted-foreground">
-              이 책, 어떠셨나요?
-            </p>
-
-            <div
-              role="radiogroup"
-              aria-label="별점"
-              className="flex items-center justify-center gap-0.5"
-            >
-              {[1, 2, 3, 4, 5].map(value => (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={value === rating}
-                  onClick={() => setRating(value)}
-                  // 별은 28px이지만 여백을 더해 손가락이 닿는 영역을 44px로 맞춘다.
-                  className="rounded-full p-2 transition-transform active:scale-90"
-                  aria-label={`${value}점`}
-                >
-                  <Icon
-                    name="star"
-                    filled={rating != null && value <= rating}
-                    className={cn(
-                      'block text-[28px]',
-                      rating != null && value <= rating
-                        ? 'text-accent-gold'
-                        : 'text-muted-foreground/25'
-                    )}
-                  />
-                </button>
-              ))}
-            </div>
-
-            {/* 고른 점수가 무슨 뜻인지 말로 확인시켜 준다. 자리는 항상 차지해 화면이 튀지 않는다. */}
-            <p
-              className={cn(
-                'mt-2 text-center text-sm font-bold',
-                rating == null ? 'text-muted-foreground/60' : 'text-primary'
-              )}
-            >
-              {rating == null ? '별점을 골라주세요' : `${rating}점 · ${RATING_LABELS[rating]}`}
-            </p>
-          </div>
-        </section>
-
         {/* Review Text */}
         <section className="px-6 py-4">
           <label htmlFor="review-content" className="mb-2 block text-base font-bold">
@@ -491,27 +452,113 @@ export default function WriteReviewPage() {
           />
         </section>
 
-        {/* 인용구 — 닫혀 있으면 진입 버튼, 열면 그 자리에서 편집기로 바뀐다.
-            누른 자리에서 바로 열려야 결과가 화면 밖으로 밀려나지 않는다. */}
-        {!isQuoteEditorOpen && (
-          <section className="grid grid-cols-2 gap-3 px-6 py-2">
-            <button
-              type="button"
-              onClick={() => setIsQuoteEditorOpen(true)}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-sm font-bold shadow-sm transition-colors hover:bg-primary/5"
-            >
-              <Icon name="format_quote" className="text-[20px]" />
-              인용구 추가
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsOcrSheetOpen(true)}
-              disabled={isOcrLoading}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-sm font-bold shadow-sm transition-colors hover:bg-primary/5 disabled:opacity-60"
-            >
-              <Icon name="photo_camera" className="text-[20px]" />
-              {isOcrLoading ? '인식 중...' : '사진으로 입력'}
-            </button>
+        {/* 입력 도구 — 인용구 / 별점 / 사진. 셋 다 눌러서 여는 방식으로 통일했다.
+            별점이 여기 낀 이유: 예전엔 별점판이 책 정보 바로 아래 항상 펼쳐져 있어
+            정작 주인공인 감상 입력창이 화면 아래로 밀렸다.
+
+            행 자체는 늘 띄워 둔다. 예전엔 인용구를 열면 이 행이 통째로 사라졌는데,
+            그러면 인용구를 먼저 연 사람은 별점 버튼에 닿을 수 없다. 열린 입력판은
+            행을 대신하지 않고 행 아래에 쌓인다. */}
+        <section className="grid grid-cols-3 gap-3 px-6 py-2">
+          <button
+            type="button"
+            onClick={() => setIsQuoteEditorOpen(open => !open)}
+            aria-expanded={isQuoteEditorOpen}
+            className={cn(
+              'flex flex-col items-center justify-center gap-1 rounded-2xl py-3.5 text-xs font-bold shadow-sm transition-colors',
+              isQuoteEditorOpen ? 'bg-primary/10 text-primary' : 'bg-card hover:bg-primary/5'
+            )}
+          >
+            <Icon name="format_quote" className="text-[20px]" />
+            인용구 추가
+          </button>
+
+          {/* 접혀 있어도 몇 점인지 보여야 한다 — 안 그러면 별점을 매겼는지 확인하려고
+              매번 열어 봐야 한다. */}
+          <button
+            type="button"
+            onClick={() => setIsRatingOpen(open => !open)}
+            aria-expanded={isRatingOpen}
+            className={cn(
+              'flex flex-col items-center justify-center gap-1 rounded-2xl py-3.5 text-xs font-bold shadow-sm transition-colors',
+              isRatingOpen ? 'bg-primary/10 text-primary' : 'bg-card hover:bg-primary/5'
+            )}
+          >
+            <Icon
+              name="star"
+              filled={rating != null}
+              className={cn('text-[20px]', rating != null && 'text-accent-gold')}
+            />
+            {rating == null ? '별점 매기기' : `별점 ${rating}점`}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsOcrSheetOpen(true)}
+            disabled={isOcrLoading}
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-card py-3.5 text-xs font-bold shadow-sm transition-colors hover:bg-primary/5 disabled:opacity-60"
+          >
+            <Icon name="photo_camera" className="text-[20px]" />
+            {isOcrLoading ? '인식 중...' : '사진으로 입력'}
+          </button>
+        </section>
+
+        {isRatingOpen && (
+          <section className="px-6 py-2">
+            <div ref={ratingPanelRef} className="relative rounded-2xl bg-card px-6 py-6 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setIsRatingOpen(false)}
+                aria-label="별점 닫기"
+                className="absolute right-3 top-3 flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              >
+                <Icon name="close" className="text-[18px]" />
+              </button>
+
+              <p className="mb-3 text-center text-sm font-bold text-muted-foreground">
+                이 책, 어떠셨나요?
+              </p>
+
+              <div
+                role="radiogroup"
+                aria-label="별점"
+                className="flex items-center justify-center gap-0.5"
+              >
+                {[1, 2, 3, 4, 5].map(value => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={value === rating}
+                    onClick={() => setRating(value)}
+                    // 별은 28px이지만 여백을 더해 손가락이 닿는 영역을 44px로 맞춘다.
+                    className="rounded-full p-2 transition-transform active:scale-90"
+                    aria-label={`${value}점`}
+                  >
+                    <Icon
+                      name="star"
+                      filled={rating != null && value <= rating}
+                      className={cn(
+                        'block text-[28px]',
+                        rating != null && value <= rating
+                          ? 'text-accent-gold'
+                          : 'text-muted-foreground/25'
+                      )}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {/* 고른 점수가 무슨 뜻인지 말로 확인시켜 준다. 자리는 항상 차지해 화면이 튀지 않는다. */}
+              <p
+                className={cn(
+                  'mt-2 text-center text-sm font-bold',
+                  rating == null ? 'text-muted-foreground/60' : 'text-primary'
+                )}
+              >
+                {rating == null ? '별점을 골라주세요' : `${rating}점 · ${RATING_LABELS[rating]}`}
+              </p>
+            </div>
           </section>
         )}
 
@@ -538,16 +585,8 @@ export default function WriteReviewPage() {
                   className="min-h-[96px] w-full resize-none bg-transparent text-lg italic leading-relaxed outline-none placeholder:text-muted-foreground/50"
                 />
               </div>
-              <div className="mt-2 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setIsOcrSheetOpen(true)}
-                  disabled={isOcrLoading}
-                  className="flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80 disabled:opacity-50"
-                >
-                  <Icon name="photo_camera" className="text-[18px]" />
-                  {isOcrLoading ? '인식 중...' : '사진으로 입력'}
-                </button>
+              {/* 사진 입력 버튼은 위 도구 행에 상시로 있으므로 여기서 중복해 두지 않는다. */}
+              <div className="mt-2 flex items-center justify-end">
                 <span className="text-xs text-muted-foreground">{quoteText.length}/200</span>
               </div>
             </div>
