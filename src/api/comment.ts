@@ -53,6 +53,15 @@ export interface CommentListResponse {
   size: number
 }
 
+/**
+ * 댓글 목록 정렬 기준.
+ *
+ * - `latest`: 최신순. 커서로 이어 볼 수 있어 시트의 전체 목록에 쓴다.
+ * - `top`: 인기순(좋아요 → 대댓글 수 → 최신). 감상 상세에 미리 펼쳐 보이는 몇 개를 고를 때 쓴다.
+ *   정렬 키가 commentId가 아니라 커서를 쓸 수 없고, 서버도 `nextCursor`를 내려주지 않는다.
+ */
+export type CommentSort = 'latest' | 'top'
+
 export interface CommentCreateResponse {
   commentId: number
   reviewId: number
@@ -75,16 +84,21 @@ export interface CommentLikeResponse {
 }
 
 /**
- * 감상의 댓글 목록을 커서 기반으로 조회한다.
+ * 감상의 댓글 목록을 조회한다.
  *
  * 부모 댓글만 페이징 대상이고 각 부모의 대댓글은 `replies` 배열에 전부 포함.
  * 삭제된 댓글도 `isDeleted: true`로 내려와 "삭제된 댓글입니다"로 렌더.
+ *
+ * `sort='top'`이면 인기순 상위 `limit`개를 돌려주며 커서가 동작하지 않는다.
+ * 이 정렬에서는 삭제된 부모 댓글이 목록에서 아예 빠진다 —
+ * "삭제된 댓글입니다"가 좋아요 수만으로 미리보기 맨 위를 차지하지 않도록.
  */
 export async function getComments(
   reviewId: number,
   cursor?: number | null,
   limit = 20,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  sort: CommentSort = 'latest'
 ): Promise<CommentListResponse> {
   try {
     const { data } = await apiClient.get<ApiResponse<CommentListResponse>>(
@@ -92,7 +106,9 @@ export async function getComments(
       {
         params: {
           limit,
-          ...(cursor != null ? { cursor } : {}),
+          sort,
+          // 인기순은 커서로 이어 볼 수 없어 서버가 무시한다. 보내지 않아 의도를 분명히 한다.
+          ...(cursor != null && sort === 'latest' ? { cursor } : {}),
         },
         signal,
       }

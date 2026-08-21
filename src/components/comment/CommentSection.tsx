@@ -26,9 +26,14 @@ interface CommentSectionProps {
   onCommentCountChange?: (count: number) => void
   /**
    * `page`는 문서 흐름에 그대로 쌓이는 기존 레이아웃,
-   * `sheet`는 바텀시트 안에서 목록만 스크롤되고 입력창이 하단에 고정되는 레이아웃.
+   * `sheet`는 바텀시트 안에서 목록만 스크롤되고 입력창이 하단에 고정되는 레이아웃,
+   * `preview`는 감상 상세에 인기 댓글 몇 개만 펼쳐 보이는 읽기 전용 레이아웃이다.
    */
-  variant?: 'page' | 'sheet'
+  variant?: 'page' | 'sheet' | 'preview'
+  /** `preview`에서 펼쳐 보일 댓글 수. */
+  previewLimit?: number
+  /** `preview`에서 "다른 댓글도 보기"를 눌렀을 때. 보통 전체 목록 시트를 연다. */
+  onExpand?: () => void
 }
 
 /**
@@ -42,6 +47,8 @@ export default function CommentSection({
   initialCommentCount,
   onCommentCountChange,
   variant = 'page',
+  previewLimit = 12,
+  onExpand,
 }: CommentSectionProps) {
   const [comments, setComments] = useState<CommentItem[]>([])
   const [nextCursor, setNextCursor] = useState<number | null>(null)
@@ -71,6 +78,9 @@ export default function CommentSection({
   const [reportTargetId, setReportTargetId] = useState<number | null>(null)
 
   const isSheet = variant === 'sheet'
+  // 미리보기는 읽기 전용이다. 입력창·무한스크롤을 빼고 인기순 상위 몇 개만 보여준 뒤
+  // 나머지는 시트로 넘긴다. 작성·수정·삭제는 시트 인스턴스가 전담한다.
+  const isPreview = variant === 'preview'
 
   const inputRef = useRef<HTMLInputElement>(null)
   // 시트 모드에서 실제로 스크롤되는 컨테이너. IntersectionObserver의 root로 넘긴다.
@@ -97,7 +107,9 @@ export default function CommentSection({
     setCommentCount(initialCommentCount)
     ;(async () => {
       try {
-        const response = await getComments(reviewId, null, 20, controller.signal)
+        const response = isPreview
+          ? await getComments(reviewId, null, previewLimit, controller.signal, 'top')
+          : await getComments(reviewId, null, 20, controller.signal)
         if (controller.signal.aborted) return
         setComments(response.content)
         setNextCursor(response.nextCursor)
@@ -113,7 +125,10 @@ export default function CommentSection({
       controller.abort()
       moreControllerRef.current?.abort()
     }
-  }, [reviewId, initialCommentCount])
+    // initialCommentCount가 의존성에 있는 덕에 미리보기가 자동으로 갱신된다 —
+    // 시트에서 댓글을 쓰거나 지우면 상세 페이지의 카운트가 바뀌고, 그 값이 여기로 내려와
+    // 인기순 목록을 다시 불러온다. 미리보기는 카운트를 되돌려 보고하지 않아 순환하지 않는다.
+  }, [reviewId, initialCommentCount, isPreview, previewLimit])
 
   const fetchMore = useCallback(async () => {
     const s = stateRef.current
@@ -352,10 +367,19 @@ export default function CommentSection({
     setEditContent('')
   }
 
+  // 미리보기엔 입력창이 없어 답글·수정을 받아 줄 자리가 없고, 삭제는 댓글 수를 바꿔
+  // 상세 페이지가 들고 있는 카운트와 어긋난다. 이 셋은 전체 목록 시트로 넘긴다.
+  // 좋아요와 신고는 입력창 없이 끝나므로 미리보기에서도 그대로 동작한다.
+  const expand = () => onExpand?.()
+  const rowHandlers = isPreview
+    ? { onReply: expand, onEdit: expand, onDelete: expand }
+    : { onReply: startReply, onEdit: startEdit, onDelete: handleDelete }
+
   const commentList = (
-    <section className={cn('px-5 pt-2', isSheet ? 'pb-4' : 'pb-6')}>
-      {/* 시트 모드에선 시트 헤더가 이미 "댓글 N개"를 보여주므로 제목을 중복 렌더하지 않는다 */}
-      {!isSheet && <h3 className="mb-4 text-lg font-bold">댓글 {commentCount}개</h3>}
+    // 미리보기는 상세 페이지 본문에 얹히므로 좌우 여백을 그 본문(px-4)에 맞춘다.
+    <section className={cn('pt-2', isPreview ? 'px-4' : 'px-5', isSheet ? 'pb-4' : 'pb-6')}>
+      {/* 시트 모드에선 시트 헤더가, 미리보기에선 상세 페이지가 이미 카운트를 보여주므로 제목을 중복 렌더하지 않는다 */}
+      {!isSheet && !isPreview && <h3 className="mb-4 text-lg font-bold">댓글 {commentCount}개</h3>}
 
       {isLoading && (
         <p
@@ -373,11 +397,23 @@ export default function CommentSection({
         </p>
       )}
 
-      {!isLoading && !errorMessage && comments.length === 0 && (
-        <div className="rounded-xl bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-          아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
-        </div>
-      )}
+      {!isLoading &&
+        !errorMessage &&
+        comments.length === 0 &&
+        // 미리보기엔 입력창이 없다. 빈 상태를 버튼으로 만들어 눌러서 시트를 열 수 있게 한다.
+        (isPreview ? (
+          <button
+            type="button"
+            onClick={onExpand}
+            className="w-full rounded-xl bg-card px-4 py-8 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
+          </button>
+        ) : (
+          <div className="rounded-xl bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+            아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
+          </div>
+        ))}
 
       {comments.length > 0 && (
         <div className="space-y-1">
@@ -387,9 +423,7 @@ export default function CommentSection({
                 comment={comment}
                 parentCommentId={null}
                 deletingId={deletingId}
-                onReply={startReply}
-                onEdit={startEdit}
-                onDelete={handleDelete}
+                {...rowHandlers}
                 onToggleLike={handleToggleLike}
                 onReport={id => setReportTargetId(id)}
               />
@@ -401,8 +435,8 @@ export default function CommentSection({
                       comment={reply}
                       parentCommentId={comment.commentId}
                       deletingId={deletingId}
-                      onEdit={startEdit}
-                      onDelete={handleDelete}
+                      onEdit={rowHandlers.onEdit}
+                      onDelete={rowHandlers.onDelete}
                       onToggleLike={handleToggleLike}
                       onReport={id => setReportTargetId(id)}
                     />
@@ -414,7 +448,20 @@ export default function CommentSection({
         </div>
       )}
 
-      {hasNext && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
+      {/* 미리보기는 스크롤로 더 불러오지 않는다. 나머지는 아래 버튼으로 시트에 넘긴다. */}
+      {hasNext && !isPreview && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
+
+      {/* "다른 댓글도 보기" — 목록 맨 아래. 인기순 상위 밖에 남은 댓글이 있을 때만 낸다.
+          남은 게 없는데 버튼을 내면 눌러도 같은 댓글만 다시 보여 거짓말이 된다. */}
+      {isPreview && hasNext && !isLoading && !errorMessage && (
+        <button
+          type="button"
+          onClick={onExpand}
+          className="mt-2 block w-full py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          다른 댓글도 보기
+        </button>
+      )}
 
       {isLoadingMore && (
         <StatusMessage tone="hint" compact>
@@ -539,6 +586,9 @@ export default function CommentSection({
           </div>
           <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">{composer}</div>
         </>
+      ) : isPreview ? (
+        // 미리보기는 목록만. 작성은 시트가 전담한다.
+        commentList
       ) : (
         <>
           {commentList}

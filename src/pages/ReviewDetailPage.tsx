@@ -372,7 +372,7 @@ export default function ReviewDetailPage() {
             )}
           </div>
 
-          {/* 좋아요 수 · 댓글 모두 보기 (작성 시각은 헤더로 옮겨 중복을 없앴다) */}
+          {/* 좋아요 수 (작성 시각은 헤더로 옮겨 중복을 없앴다) */}
           <div className="space-y-1 px-4 pb-2">
             <p className="text-sm font-bold">좋아요 {likeCount}개</p>
 
@@ -381,15 +381,22 @@ export default function ReviewDetailPage() {
                 내 서재에 저장했습니다.
               </p>
             )}
-
-            <button
-              type="button"
-              onClick={() => setIsCommentSheetOpen(true)}
-              className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {commentCount > 0 ? `댓글 ${commentCount}개 모두 보기` : '첫 댓글을 남겨보세요'}
-            </button>
           </div>
+
+          {/* 인기 댓글 미리보기 — 예전엔 "댓글 N개 모두 보기" 한 줄만 있고 댓글을 보려면
+              반드시 시트를 열어야 했다. 좋아요·대댓글이 많은 순으로 12개를 바로 펼쳐
+              한 번의 탭 없이 읽히게 하고, 나머지는 목록 맨 아래 "다른 댓글도 보기"로 넘긴다.
+
+              initialCommentCount에 서버 원본이 아니라 화면에 보이는 commentCount를 넘긴다.
+              시트에서 댓글을 쓰거나 지우면 이 값이 바뀌고, 그게 미리보기의 재조회를 유발해
+              방금 쓴 댓글이 반영된다. */}
+          <CommentSection
+            reviewId={review.reviewId}
+            initialCommentCount={commentCount}
+            variant="preview"
+            previewLimit={12}
+            onExpand={() => setIsCommentSheetOpen(true)}
+          />
         </article>
       </main>
 
